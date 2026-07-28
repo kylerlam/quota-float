@@ -35,11 +35,11 @@ export const DESKTOP_PALETTES: Record<WidgetTheme, DesktopPalettes> = {
     signed_out: { "--cool": "#688CD4", "--glow": "#D7EEF3", "--warm": "#D89CA5", "--progress-start": "#397AE0", "--progress-end": "#89B7FF", "--linear-warm": "#BECBE2", "--linear-end": "#E3EAF4", "--gradient-angle": "145deg", "--aurora-opacity": ".58" },
   },
   dark: {
-    healthy: { "--cool": "#272B59", "--glow": "#1C2240", "--warm": "#071231", "--progress-start": "#177CBB", "--progress-end": "#5DA6D1", "--linear-warm": "#071231", "--linear-end": "#071231", "--aurora-opacity": "1" },
-    caution: { "--cool": "#26294B", "--glow": "#3C2F25", "--warm": "#09132F", "--progress-start": "#BD9252", "--progress-end": "#DEC299", "--linear-warm": "#09132F", "--linear-end": "#09132F", "--aurora-opacity": "1" },
-    critical: { "--cool": "#0F1D39", "--glow": "#50322B", "--warm": "#09132F", "--progress-start": "#CE7253", "--progress-end": "#E6A38D", "--warm-position": "11% 98%", "--warm-fade": "68%", "--linear-warm": "#09132F", "--linear-end": "#09132F", "--gradient-angle": "213deg", "--aurora-opacity": "1" },
-    unavailable: { "--cool": "#2B4478", "--glow": "#5F3549", "--warm": "#3D2353", "--progress-start": "#6072A2", "--progress-end": "#92A4C5" },
-    stale: { "--cool": "#273748", "--glow": "#455569", "--warm": "#2B3340", "--progress-start": "#71849A", "--progress-end": "#A4B3C1" },
-    signed_out: { "--cool": "#2D3864", "--glow": "#31445A", "--warm": "#5B3B55", "--progress-start": "#5864DE", "--progress-end": "#7D88F2", "--linear-warm": "#353650", "--linear-end": "#1D2534", "--aurora-opacity": "1" },
+    healthy: { "--cool": "#3B4048", "--glow": "#252A31", "--warm": "#111419", "--progress-start": "#8D99A8", "--progress-end": "#D3D9E0", "--linear-warm": "#171A20", "--linear-end": "#0D1014", "--aurora-opacity": "1" },
+    caution: { "--cool": "#40434A", "--glow": "#302E2B", "--warm": "#15171A", "--progress-start": "#B59B73", "--progress-end": "#E2D2B8", "--linear-warm": "#1B1A18", "--linear-end": "#101114", "--aurora-opacity": "1" },
+    critical: { "--cool": "#3C3E43", "--glow": "#3A302E", "--warm": "#151619", "--progress-start": "#B8796C", "--progress-end": "#E2ADA2", "--warm-position": "11% 98%", "--warm-fade": "68%", "--linear-warm": "#1D1919", "--linear-end": "#101114", "--gradient-angle": "213deg", "--aurora-opacity": "1" },
+    unavailable: { "--cool": "#41464E", "--glow": "#30343A", "--warm": "#191C21", "--progress-start": "#77808C", "--progress-end": "#B8C0CA" },
+    stale: { "--cool": "#383D43", "--glow": "#2D3238", "--warm": "#181B1F", "--progress-start": "#747D87", "--progress-end": "#ADB5BE" },
+    signed_out: { "--cool": "#42464D", "--glow": "#30343A", "--warm": "#202226", "--progress-start": "#858E9A", "--progress-end": "#C2C9D1", "--linear-warm": "#202328", "--linear-end": "#111419", "--aurora-opacity": "1" },
   },
 };

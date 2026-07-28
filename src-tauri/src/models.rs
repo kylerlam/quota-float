@@ -105,6 +105,12 @@ impl WidgetPreferences {
         if self.appearance != "system" && self.appearance != "light" && self.appearance != "dark" {
             self.appearance = default_appearance();
         }
+        if self.selected_skin != "default"
+            && self.selected_skin != "blur"
+            && self.selected_skin != "computer"
+        {
+            self.selected_skin = default_skin();
+        }
         self
     }
 }

@@ -22,20 +22,20 @@ describe("desktop palettes", () => {
     expect(DESKTOP_PALETTES.light.critical).not.toEqual(DESKTOP_PALETTES.dark.critical);
   });
 
-  it("uses the approved dark caution and critical palettes", () => {
+  it("uses the grey-space dark caution and critical palettes", () => {
     expect(DESKTOP_PALETTES.dark.caution).toMatchObject({
-      "--cool": "#26294B",
-      "--glow": "#3C2F25",
-      "--warm": "#09132F",
-      "--progress-start": "#BD9252",
-      "--progress-end": "#DEC299",
+      "--cool": "#40434A",
+      "--glow": "#302E2B",
+      "--warm": "#15171A",
+      "--progress-start": "#B59B73",
+      "--progress-end": "#E2D2B8",
     });
     expect(DESKTOP_PALETTES.dark.critical).toMatchObject({
-      "--cool": "#0F1D39",
-      "--glow": "#50322B",
-      "--warm": "#09132F",
-      "--progress-start": "#CE7253",
-      "--progress-end": "#E6A38D",
+      "--cool": "#3C3E43",
+      "--glow": "#3A302E",
+      "--warm": "#151619",
+      "--progress-start": "#B8796C",
+      "--progress-end": "#E2ADA2",
     });
   });
 });

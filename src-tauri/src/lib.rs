@@ -868,6 +868,26 @@ fn apply_lock(app: &AppHandle, locked: bool) -> Result<(), String> {
         .map_err(|_| "failed to toggle click-through".to_string())
 }
 
+fn apply_always_on_top(app: &AppHandle, always_on_top: bool) -> Result<(), String> {
+    let window = app
+        .get_webview_window("widget")
+        .ok_or_else(|| "widget window missing".to_string())?;
+    window
+        .set_always_on_top(always_on_top)
+        .map_err(|error| format!("failed to toggle always-on-top: {error}"))?;
+    #[cfg(target_os = "macos")]
+    if always_on_top {
+        let ns_window = window
+            .ns_window()
+            .map_err(|error| format!("failed to access native widget window: {error}"))?;
+        unsafe {
+            use objc2_app_kit::NSWindow;
+            (&*ns_window.cast::<NSWindow>()).orderFrontRegardless();
+        }
+    }
+    Ok(())
+}
+
 #[cfg(target_os = "macos")]
 fn register_space_change_fronting(app: &tauri::App) {
     use block2::RcBlock;
@@ -882,6 +902,13 @@ fn register_space_change_fronting(app: &tauri::App) {
         let app_handle = app_handle.clone();
         let main_thread_handle = app_handle.clone();
         let _ = app_handle.run_on_main_thread(move || {
+            let should_front = main_thread_handle
+                .try_state::<AppState>()
+                .and_then(|state| state.preferences.lock().ok().map(|prefs| prefs.always_on_top))
+                .unwrap_or(false);
+            if !should_front {
+                return;
+            }
             let Some(window) = main_thread_handle.get_webview_window("widget") else {
                 return;
             };
@@ -948,12 +975,9 @@ fn set_widget_always_on_top(
     let mut next = previous.clone();
     next.always_on_top = always_on_top;
     persist_preferences(&state.preferences_path, &next)?;
-    let window = app
-        .get_webview_window("widget")
-        .ok_or_else(|| "widget window missing".to_string())?;
-    if let Err(error) = window.set_always_on_top(always_on_top) {
+    if let Err(error) = apply_always_on_top(&app, always_on_top) {
         let _ = persist_preferences(&state.preferences_path, &previous);
-        return Err(format!("failed to toggle always-on-top: {error}"));
+        return Err(error);
     }
     *state
         .preferences
@@ -989,15 +1013,14 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
     let update = MenuItem::with_id(app, "update", "Check for updates", true, None::<&str>)?;
     let unlock = MenuItem::with_id(app, "unlock", "Unlock widget", true, None::<&str>)?;
     let pin = MenuItem::with_id(app, "pin", "Pin / Unpin Codex", true, None::<&str>)?;
+    let always_on_top = CheckMenuItem::with_id(app, "always-on-top", "Always on top", true, false, None::<&str>)?;
     let language = MenuItem::with_id(app, "language", "Switch Language / 切换语言", true, None::<&str>)?;
     let theme_system = CheckMenuItem::with_id(app, "theme-system", "Follow system", true, false, None::<&str>)?;
     let theme_dark = CheckMenuItem::with_id(app, "theme-dark", "Dark", true, false, None::<&str>)?;
     let theme_light = CheckMenuItem::with_id(app, "theme-light", "Light", true, false, None::<&str>)?;
-    let skin_default = CheckMenuItem::with_id(app, "skin-default", "Default", true, false, None::<&str>)?;
     let skin_blur = CheckMenuItem::with_id(app, "skin-blur", "Blur", true, false, None::<&str>)?;
     let skin_computer = CheckMenuItem::with_id(app, "skin-computer", "Computer", true, false, None::<&str>)?;
-    let appearance = Submenu::with_items(app, "Appearance / 外观", true, &[&theme_system, &theme_dark, &theme_light])?;
-    let skins = Submenu::with_items(app, "Skin / 皮肤", true, &[&skin_default, &skin_blur, &skin_computer])?;
+    let appearance = Submenu::with_items(app, "Appearance / 外观", true, &[&theme_system, &theme_dark, &theme_light, &skin_blur, &skin_computer])?;
     let autostart = CheckMenuItem::with_id(
         app, "autostart", "Start at login", true,
         app.autolaunch().is_enabled().unwrap_or(false), None::<&str>,
@@ -1005,16 +1028,16 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
     #[cfg(debug_assertions)]
     let test_short_window = CheckMenuItem::with_id(app, "debug-short-window", "Test: simulate 5-hour quota", true, false, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
-    let settings = Submenu::with_items(app, "Settings / 设置", true, &[&unlock, &pin, &language, &autostart])?;
+    let settings = Submenu::with_items(app, "Settings / 设置", true, &[&always_on_top, &unlock, &pin, &language, &autostart])?;
 
     let preferences = app.try_state::<AppState>()
         .and_then(|state| state.preferences.lock().ok().map(|prefs| prefs.clone()))
         .unwrap_or_default();
     let english = preferences.language == "en";
-    let _ = theme_system.set_checked(preferences.appearance == "system");
-    let _ = theme_dark.set_checked(preferences.appearance == "dark");
-    let _ = theme_light.set_checked(preferences.appearance == "light");
-    let _ = skin_default.set_checked(preferences.selected_skin == "default");
+    let _ = always_on_top.set_checked(preferences.always_on_top);
+    let _ = theme_system.set_checked(preferences.selected_skin == "default" && preferences.appearance == "system");
+    let _ = theme_dark.set_checked(preferences.selected_skin == "default" && preferences.appearance == "dark");
+    let _ = theme_light.set_checked(preferences.selected_skin == "default" && preferences.appearance == "light");
     let _ = skin_blur.set_checked(preferences.selected_skin == "blur");
     let _ = skin_computer.set_checked(preferences.selected_skin == "computer");
     if !english {
@@ -1022,29 +1045,28 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
         let _ = refresh.set_text("立即刷新");
         let _ = update.set_text(update_menu_label(&preferences.language, false));
         let _ = unlock.set_text("解锁悬浮窗");
+        let _ = always_on_top.set_text("置顶");
         let _ = pin.set_text("固定 / 取消固定 Codex");
         let _ = language.set_text("Switch to English");
         let _ = appearance.set_text("外观");
-        let _ = skins.set_text("皮肤");
-        let _ = skin_default.set_text("默认");
         let _ = autostart.set_text("开机启动");
         let _ = quit.set_text("退出");
     }
 
     #[cfg(debug_assertions)]
-    let menu = Menu::with_items(app, &[&show, &refresh, &update, &settings, &appearance, &skins, &test_short_window, &quit])?;
+    let menu = Menu::with_items(app, &[&show, &refresh, &update, &settings, &appearance, &test_short_window, &quit])?;
     #[cfg(not(debug_assertions))]
-    let menu = Menu::with_items(app, &[&show, &refresh, &update, &settings, &appearance, &skins, &quit])?;
+    let menu = Menu::with_items(app, &[&show, &refresh, &update, &settings, &appearance, &quit])?;
     let mut builder = TrayIconBuilder::with_id("main").menu(&menu).tooltip("Quota Float");
     if let Some(icon) = app.default_window_icon() {
         builder = builder.icon(icon.clone());
     }
     let update_indicator = update.clone();
     let autostart_menu = autostart.clone();
+    let always_on_top_state = always_on_top.clone();
     let theme_system_state = theme_system.clone();
     let theme_dark_state = theme_dark.clone();
     let theme_light_state = theme_light.clone();
-    let skin_default_state = skin_default.clone();
     let skin_blur_state = skin_blur.clone();
     let skin_computer_state = skin_computer.clone();
     #[cfg(debug_assertions)]
@@ -1090,24 +1112,46 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
                 let _ = app.emit_to("widget", "preferences-changed", prefs.clone());
             }
         },
+        "always-on-top" => if let Some(state) = app.try_state::<AppState>() {
+            if let Ok(mut prefs) = state.preferences.lock() {
+                let previous = prefs.clone();
+                prefs.always_on_top = !prefs.always_on_top;
+                if persist_preferences(&state.preferences_path, &prefs).is_ok()
+                    && apply_always_on_top(app, prefs.always_on_top).is_ok()
+                {
+                    let _ = always_on_top_state.set_checked(prefs.always_on_top);
+                    let _ = app.emit_to("widget", "preferences-changed", prefs.clone());
+                } else {
+                    *prefs = previous;
+                    let _ = persist_preferences(&state.preferences_path, &prefs);
+                    let _ = always_on_top_state.set_checked(prefs.always_on_top);
+                }
+            }
+        },
         "theme-system" | "theme-dark" | "theme-light" => if let Some(state) = app.try_state::<AppState>() {
             if let Ok(mut prefs) = state.preferences.lock() {
                 prefs.appearance = match event.id.as_ref() {
                     "theme-dark" => "dark".into(), "theme-light" => "light".into(), _ => "system".into(),
                 };
+                prefs.selected_skin = "default".into();
                 if persist_preferences(&state.preferences_path, &prefs).is_ok() {
                     let _ = theme_system_state.set_checked(prefs.appearance == "system");
                     let _ = theme_dark_state.set_checked(prefs.appearance == "dark");
                     let _ = theme_light_state.set_checked(prefs.appearance == "light");
+                    let _ = skin_blur_state.set_checked(false);
+                    let _ = skin_computer_state.set_checked(false);
                     let _ = app.emit_to("widget", "preferences-changed", prefs.clone());
                 }
             }
         },
-        "skin-default" | "skin-blur" | "skin-computer" => if let Some(state) = app.try_state::<AppState>() {
+        "skin-blur" | "skin-computer" => if let Some(state) = app.try_state::<AppState>() {
             if let Ok(mut prefs) = state.preferences.lock() {
-                prefs.selected_skin = event.id.as_ref().strip_prefix("skin-").unwrap_or("default").into();
+                prefs.selected_skin = event.id.as_ref().strip_prefix("skin-").unwrap_or("blur").into();
+                prefs.appearance = "light".into();
                 if persist_preferences(&state.preferences_path, &prefs).is_ok() {
-                    let _ = skin_default_state.set_checked(prefs.selected_skin == "default");
+                    let _ = theme_system_state.set_checked(false);
+                    let _ = theme_dark_state.set_checked(false);
+                    let _ = theme_light_state.set_checked(false);
                     let _ = skin_blur_state.set_checked(prefs.selected_skin == "blur");
                     let _ = skin_computer_state.set_checked(prefs.selected_skin == "computer");
                     let _ = app.emit_to("widget", "preferences-changed", prefs.clone());
@@ -1186,7 +1230,7 @@ pub fn run() {
                 let _ = apply_lock(app.handle(), true);
             }
             if let Some(window) = app.get_webview_window("widget") {
-                let _ = window.set_always_on_top(preferences.always_on_top);
+                let _ = apply_always_on_top(app.handle(), preferences.always_on_top);
                 #[cfg(target_os = "macos")]
                 let _ = window.set_visible_on_all_workspaces(true);
                 // A saved window position can be outside the active monitor while
