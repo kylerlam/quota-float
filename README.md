@@ -70,17 +70,17 @@ Please use GitHub Issues for bugs, compatibility reports, and feature requests:
 
 https://github.com/change-42-yhmm/quota-float/issues
 
-## Supporter skins
+## Optional skins
 
-The standard installer includes the free default appearances and can unlock optional supporter skins with a signed, device-bound license. Licenses are verified locally; the app does not send device request codes or license text to a service.
+Blur and Computer are included for every user and can be selected from the tray menu.
 
 ### Dark healthy-state previews
 
-Blur and Computer are optional supporter skins. These previews use mock quota data and do not reveal any account, device, or license information.
+These previews use mock quota data and do not reveal any account information.
 
 | Blur | Computer |
 | --- | --- |
-| <img src="docs/images/skin-blur-dark-healthy.jpg" alt="Blur supporter skin in a dark healthy-state preview" width="260"> | <img src="docs/images/skin-computer-dark-healthy.jpg" alt="Computer supporter skin in a dark healthy-state preview" width="260"> |
+| <img src="docs/images/skin-blur-dark-healthy.jpg" alt="Blur skin in a dark healthy-state preview" width="260"> | <img src="docs/images/skin-computer-dark-healthy.jpg" alt="Computer skin in a dark healthy-state preview" width="260"> |
 
 ## Privacy Boundary
 

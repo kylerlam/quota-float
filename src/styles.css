@@ -26,11 +26,9 @@
 .operation-notice button:hover { color: #173b69; text-decoration: underline; text-underline-offset: 2px; }
 html, body, #root { width: 100%; height: 100%; margin: 0; overflow: hidden; background: transparent; }
 button { font: inherit; }
-.supporter-skins button { position: relative; }
 .skin-owned-badge { position: absolute; top: -7px; right: -7px; z-index: 1; padding: 2px 5px; border: 1px solid #fff; border-radius: 999px; color: #0d6a57; background: #bff5dd; box-shadow: 0 2px 6px rgba(22,116,89,.2); font-size: 9px; font-style: normal; font-weight: 800; line-height: 1.1; }
 .design-success-preview { min-height: 32px; padding: 0 12px; border: 1px solid rgba(24,126,101,.32); border-radius: 10px; color: #0d6a57; background: #e8fbf3; font-size: 12px; font-weight: 750; cursor: pointer; }
 .design-success-preview:hover { background: #d6f7e8; }
-.supporter-like-burst { top: 34px; margin: 0 0 0 -24px; }
 
 .quota-card, .loading-card {
   position: relative;
@@ -242,7 +240,7 @@ button { font: inherit; }
 .orb-weekly-badge b { position: relative; z-index: 1; display: grid; height: 13px; place-items: center; color: #fff; font-size: 9px; font-weight: 500; line-height: 1; letter-spacing: .01em; transform: translateY(0); }
 .quota-orb--theme-dark .orb-weekly-badge { color: #536AD2; }
 .quota-orb--theme-dark .orb-metric { color: #FFFFFF; }
-/* Computer is a CSS-built supporter skin: the case, status stripe, display,
+/* Computer is a CSS-built optional skin: the case, status stripe, display,
    and dot-matrix progress are responsive to the existing widget dimensions. */
 .quota-card--skin-computer { --computer-ink: #244f7b; --computer-screen: #b9d7eb; position: relative; border: 0; border-radius: 0; color: #20201d; background: url("../assets/computer-bg.svg") center / 100% 100% no-repeat; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
 .quota-card--skin-computer.quota-card--caution { --computer-ink: #a46317; --computer-screen: #f3cd87; }
@@ -308,7 +306,7 @@ button { font: inherit; }
 .quota-card--skin-computer .computer-error-artwork--stale { width: 39px; height: 50px; }
 .quota-card--skin-computer .computer-error-artwork--unavailable { width: 58px; height: 51px; }
 .quota-card--skin-computer .computer-error-artwork--signed_out { width: 142px; height: 48px; }
-/* Blur is a supporter-only presentation layer. Its assets and variables are
+/* Blur is an optional presentation layer. Its assets and variables are
    scoped to Blur selectors so the default palette never changes. */
 .quota-card--skin-blur.quota-card--healthy,
 .quota-card--skin-blur.quota-card--caution,
@@ -385,17 +383,7 @@ button { font: inherit; }
 .quota-orb--skin-blur.quota-card--signed_out .aurora { display: none; }
 .quota-orb--skin-blur .orb-metric { color: #10171a; font-family: ui-rounded, "SF Pro Rounded", "Segoe UI Rounded", "Arial Rounded MT Bold", sans-serif; }
 
-.supporter-panel { box-sizing: border-box; width: 100%; min-height: 100dvh; padding: 28px 32px 18px; overflow: auto; color: #152430; background-color: #fff; background-image: url("../assets/supporter-background.svg"); background-repeat: no-repeat; background-position: center top; background-size: 100% auto; font-size: 14px; }
-.supporter-brand { display: flex; justify-content: center; align-items: center; min-height: 50px; margin-bottom: 16px; }
-.supporter-logo { display: flex; align-items: center; gap: 14px; color: #fff; font-size: 29px; font-weight: 520; letter-spacing: -.025em; text-shadow: 0 1px 2px rgba(0,105,154,.18); }
-.supporter-logo img { width: 50px; height: 50px; object-fit: contain; }
-.supporter-panel h1 { margin: 0 0 8px; color: #092030; font-size: 19px; font-weight: 650; letter-spacing: -.02em; }.supporter-description { max-width: 430px; margin: 0 0 16px; color: #315261; font-size: 14px; line-height: 1.48; }
-.supporter-workflow { display: grid; gap: 13px; }.supporter-workflow h2 { margin: 0; color: #17394b; font-size: 16px; font-weight: 650; }.supporter-step { display: grid; gap: 7px; color: #193645; font-weight: 600; }.supporter-step > span { font-size: 14px; }.supporter-step textarea { box-sizing: border-box; width: 100%; min-height: 82px; resize: vertical; padding: 11px; border: 1px solid #3bc7f1; border-radius: 6px; outline: none; color: #29414d; background: rgba(255,255,255,.9); font: 13px/1.45 ui-monospace, SFMono-Regular, Consolas, monospace; }.supporter-step textarea:focus { border-color: #12acd8; box-shadow: 0 0 0 2px rgba(18,172,216,.14); }
-.supporter-skins { display: flex; flex-wrap: wrap; gap: 9px; min-height: 50px; }.supporter-skins button { display: grid; grid-template-columns: 14px minmax(56px, 1fr) 38px; align-items: center; gap: 8px; width: 150px; min-height: 50px; padding: 5px 7px 5px 10px; border: 1px solid rgba(54,164,199,.38); border-radius: 8px; color: #254151; background: rgba(255,255,255,.75); text-align: left; cursor: pointer; transition: border-color .18s ease, background-color .18s ease, box-shadow .18s ease, transform .18s ease; }.supporter-skins button:not(.is-selected) { opacity: .72; }.supporter-skins button:hover:not(:disabled) { border-color: #25bfe9; background: #fff; transform: translateY(-1px); }.supporter-skins button:active:not(:disabled) { transform: translateY(0) scale(.985); }.supporter-skins button.is-selected { border: 2px solid #22b6e8; padding: 4px 6px 4px 9px; color: #12394a; background: #fff; box-shadow: 0 0 0 3px rgba(36,188,234,.2), 0 8px 18px rgba(38,171,210,.18); }.supporter-skins button:disabled { cursor: default; }.skin-choice-dot { width: 10px; height: 10px; border: 1px solid #80b1c2; border-radius: 50%; background: #fff; }.is-selected .skin-choice-dot { border: 3px solid #fff; box-sizing: border-box; background: #1baee2; box-shadow: 0 0 0 2px #2bbbe9; }.skin-choice-copy { display: grid; gap: 2px; }.supporter-skins b { font-size: 14px; font-weight: 500; }.skin-choice-copy small { color: #2784a9; font-size: 11px; font-weight: 700; line-height: 1; }.supporter-skins img { width: 36px; height: 36px; border-radius: 5px; object-fit: cover; }
 .computer-skin-thumbnail { width: 36px; height: 36px; border: 2px solid #a6a79d; border-radius: 3px; background: linear-gradient(#e9e9df 68%, #d9dad1 68%); box-shadow: inset 0 0 0 5px #f1f0e8; }
-.supporter-code { display: flex; align-items: center; min-height: 28px; padding-left: 9px; border: 1px solid #39c3ed; border-radius: 6px; background: rgba(255,255,255,.88); overflow: hidden; }.supporter-code code { flex: 1; overflow: hidden; color: #3d5662; font: 13px ui-monospace, SFMono-Regular, Consolas, monospace; text-overflow: ellipsis; white-space: nowrap; }.supporter-code button { align-self: stretch; min-width: 48px; border: 0; border-radius: 5px; color: #fff; background: #27aeda; font-size: 12px; cursor: pointer; }.supporter-code button:hover { background: #149dcc; }
-.supporter-primary { width: 100%; min-height: 37px; margin-top: 8px; border: 0; border-radius: 5px; color: #fff; background: linear-gradient(90deg, #1faeda, #47d6b6); font-size: 15px; font-weight: 650; cursor: pointer; }.supporter-primary:disabled { color: #fff; background: #B4C1C3; cursor: default; }.supporter-status { min-height: 18px; margin: 6px 0 0; font-size: 12px; line-height: 1.5; text-align: center; }.supporter-status--ready { color: rgba(36,109,136,.72); }.supporter-status--info { color: #247fa4; }.supporter-status--success { color: #16826e; }.supporter-status--error { color: #b55437; }.supporter-contact { margin: 12px 0 0; color: rgba(36,109,136,.72); font-size: 13px; text-align: center; }.supporter-contact a { color: #279fc9; }.supporter-legal { margin: 14px 0 0; padding: 10px 12px; border: 1px solid rgba(42,133,163,.2); border-radius: 8px; color: rgba(32,73,91,.76); background: rgba(255,255,255,.58); font-size: 10px; line-height: 1.6; }.supporter-legal strong { display: block; margin-bottom: 4px; color: rgba(24,74,94,.82); font-size: 11px; font-weight: 700; }.supporter-legal ul { display: grid; gap: 3px; margin: 0; padding-left: 15px; }.supporter-legal li { padding-left: 1px; }.supporter-designer { margin: 10px 0 0; color: #82C9F6; font-size: 16px; line-height: 1.25; text-align: center; }.supporter-designer span { color: #82C9F6; font-size: 16px; font-weight: 520; letter-spacing: -.025em; }
-.supporter-like-burst { position: absolute; left: 50%; z-index: 2; width: 48px; height: 48px; margin: -42px 0 0 -24px; pointer-events: none; animation: supporter-like-pop 1.5s cubic-bezier(.16,.84,.32,1) forwards; }.supporter-like-burst img { width: 100%; height: 100%; filter: drop-shadow(0 8px 12px rgba(48,185,201,.26)); }.supporter-legal { background: #f8fcfe; }@keyframes supporter-like-pop { 0% { opacity: 0; transform: translateY(9px) scale(.35) rotate(-10deg); } 22% { opacity: 1; transform: translateY(-4px) scale(1.16) rotate(5deg); } 48% { opacity: 1; transform: translateY(-10px) scale(.98) rotate(0); } 100% { opacity: 0; transform: translateY(-24px) scale(.78); } }@media (prefers-reduced-motion: reduce) { .supporter-like-burst { animation-duration: .01ms; } }
 .orb-metric { display: flex; align-items: flex-end; justify-content: center; line-height: .86; letter-spacing: -.06em; }
 .orb-metric span { font-size: 27px; font-weight: 560; font-variant-numeric: tabular-nums; }
 .orb-metric small { margin: 0 0 3px 1px; font-size: 10px; font-weight: 750; letter-spacing: 0; }
@@ -412,7 +400,6 @@ button { font: inherit; }
 .design-card-frame { width: 314px; height: 314px; box-shadow: none; border-radius: var(--card-radius); }
 .design-orb-frame { width: 80px; height: 80px; box-shadow: none; border-radius: 24px; }
 .design-preview-switch { max-width: 520px; display: flex; flex-wrap: wrap; justify-content: center; gap: 7px; padding: 5px; border: 1px solid rgba(99,108,128,.16); border-radius: 14px; background: rgba(255,255,255,.84); box-shadow: 0 8px 24px rgba(36,42,60,.08); }
-.design-page-tabs { display: inline-flex; gap: 4px; padding: 4px; border: 1px solid rgba(99,108,128,.16); border-radius: 12px; background: rgba(255,255,255,.84); box-shadow: 0 8px 24px rgba(36,42,60,.08); }.design-page-tabs button { min-height: 30px; padding: 0 12px; border: 0; border-radius: 8px; color: #626a78; background: transparent; cursor: pointer; font-size: 12px; font-weight: 700; }.design-page-tabs button:hover { color: #202631; background: rgba(105,137,190,.1); }.design-page-tabs button.is-active { color: #fff; background: #315f9f; }.design-supporter-frame { width: 520px; height: 680px; overflow: hidden; box-shadow: 0 18px 48px rgba(51,83,100,.2); }.design-supporter-frame .supporter-panel { width: 520px; min-height: 680px; height: 680px; }
 .design-preview-switch button { min-height: 34px; padding: 0 13px; border: 0; border-radius: 10px; color: #626a78; background: transparent; cursor: pointer; font-size: 12px; font-weight: 650; }
 .design-preview-switch button span { margin-left: 3px; font-size: 10px; font-weight: 500; }
 .design-preview-switch button:hover { color: #202631; background: rgba(105,137,190,.1); }

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { QuotaCard, QuotaOrb } from "./components/QuotaCard";
-import { fetchSnapshots, getPreferences, getSupporterStatus, listenDesktopEvents, setAlwaysOnTop, setWidgetExpanded, startDragging, syncWidgetAppearance, updatePreferences } from "./lib/bridge";
+import { fetchSnapshots, getPreferences, listenDesktopEvents, setAlwaysOnTop, setWidgetExpanded, startDragging, syncWidgetAppearance, updatePreferences } from "./lib/bridge";
 import { needsFastRefresh, quotaTier } from "./lib/format";
 import { checkForAppUpdate, openReleasePage } from "./lib/appUpdate";
 import { copy, normalizeLanguage } from "./lib/i18n";
@@ -8,7 +8,7 @@ import { mergeSnapshots } from "./lib/snapshots";
 import { DESKTOP_PALETTES } from "./lib/desktopPalette";
 import type { ProviderSnapshot, WidgetPreferences, WidgetSkin, WidgetTheme } from "./types";
 
-const DEFAULT_PREFS: WidgetPreferences = { locked: false, alwaysOnTop: true, stayExpanded: false, pinnedProvider: null, autoRotateSeconds: 12, language: "zh-CN", appearance: "light", license: null, licenses: [], unlockedSkin: null, unlockedSkins: [], selectedSkin: "default" };
+const DEFAULT_PREFS: WidgetPreferences = { locked: false, alwaysOnTop: true, stayExpanded: false, pinnedProvider: null, autoRotateSeconds: 12, language: "zh-CN", appearance: "light", selectedSkin: "default" };
 const INITIAL_SNAPSHOT: ProviderSnapshot = {
   provider: "codex",
   displayName: "CODEX",
@@ -55,10 +55,7 @@ export default function App() {
     releaseOpenFailed: "Could not open GitHub Releases.",
   };
   const theme: WidgetTheme = preferences.appearance === "system" ? (systemDark ? "dark" : "light") : preferences.appearance;
-  const skin: WidgetSkin = preferences.unlockedSkins.includes(preferences.selectedSkin as Exclude<WidgetSkin, "default">)
-    && (preferences.selectedSkin === "blur" || preferences.selectedSkin === "computer")
-    ? preferences.selectedSkin
-    : "default";
+  const skin: WidgetSkin = preferences.selectedSkin;
 
   useEffect(() => {
     // This only reconciles the transparent-window safety inset after a theme
@@ -125,9 +122,6 @@ export default function App() {
   useEffect(() => {
     void refresh(true);
     void (async () => {
-      // Validate and normalize stored supporter state before allowing it to
-      // affect rendering, avoiding a stale preference response re-enabling it.
-      await getSupporterStatus().catch(() => undefined);
       const value = await getPreferences().catch(async () => {
         // A WebView can occasionally issue its first invoke while it is
         // resuming. Retry once, then retain the already-safe defaults without

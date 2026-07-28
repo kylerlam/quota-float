@@ -1,6 +1,6 @@
 /**
  * Blur-only presentation parameters. Keep this separate from the default
- * desktop palette: adjusting a supporter skin must not change free themes.
+ * desktop palette: adjusting this optional skin must not change the default themes.
  */
 export const BLUR_PROGRESS_SEGMENTS = 20;
 
