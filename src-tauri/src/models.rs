@@ -47,6 +47,8 @@ pub struct WidgetPreferences {
     #[serde(default = "default_always_on_top")]
     pub always_on_top: bool,
     #[serde(default)]
+    pub window_behavior_version: u8,
+    #[serde(default)]
     pub stay_expanded: bool,
     pub pinned_provider: Option<String>,
     pub auto_rotate_seconds: u64,
@@ -59,7 +61,7 @@ pub struct WidgetPreferences {
 }
 
 fn default_always_on_top() -> bool {
-    true
+    false
 }
 fn default_language() -> String {
     "zh-CN".into()
@@ -75,7 +77,8 @@ impl Default for WidgetPreferences {
     fn default() -> Self {
         Self {
             locked: false,
-            always_on_top: true,
+            always_on_top: false,
+            window_behavior_version: 1,
             stay_expanded: false,
             pinned_provider: None,
             auto_rotate_seconds: 12,
@@ -88,6 +91,10 @@ impl Default for WidgetPreferences {
 
 impl WidgetPreferences {
     pub fn normalized(mut self) -> Self {
+        if self.window_behavior_version < 1 {
+            self.always_on_top = false;
+            self.window_behavior_version = 1;
+        }
         self.auto_rotate_seconds = self.auto_rotate_seconds.clamp(5, 300);
         if self.pinned_provider.as_deref() != Some("codex") {
             self.pinned_provider = None;

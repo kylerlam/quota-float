@@ -868,6 +868,47 @@ fn apply_lock(app: &AppHandle, locked: bool) -> Result<(), String> {
         .map_err(|_| "failed to toggle click-through".to_string())
 }
 
+#[cfg(target_os = "macos")]
+fn register_space_change_fronting(app: &tauri::App) {
+    use block2::RcBlock;
+    use objc2_app_kit::{
+        NSWindow, NSWorkspace, NSWorkspaceActiveSpaceDidChangeNotification,
+    };
+    use objc2_foundation::NSNotification;
+    use std::ptr::NonNull;
+
+    let app_handle = app.handle().clone();
+    let callback = RcBlock::new(move |_notification: NonNull<NSNotification>| {
+        let app_handle = app_handle.clone();
+        let main_thread_handle = app_handle.clone();
+        let _ = app_handle.run_on_main_thread(move || {
+            let Some(window) = main_thread_handle.get_webview_window("widget") else {
+                return;
+            };
+            if !window.is_visible().unwrap_or(false) {
+                return;
+            }
+            let Ok(ns_window) = window.ns_window() else {
+                return;
+            };
+            unsafe {
+                (&*ns_window.cast::<NSWindow>()).orderFrontRegardless();
+            }
+        });
+    });
+    let center = NSWorkspace::sharedWorkspace().notificationCenter();
+    let observer = unsafe {
+        center.addObserverForName_object_queue_usingBlock(
+            Some(NSWorkspaceActiveSpaceDidChangeNotification),
+            None,
+            None,
+            &callback,
+        )
+    };
+    // The observer belongs to the application lifetime.
+    std::mem::forget(observer);
+}
+
 #[tauri::command]
 fn set_widget_locked(
     locked: bool,
@@ -1116,6 +1157,7 @@ pub fn run() {
             let data_dir = app.path().app_config_dir()?;
             let preferences_path = data_dir.join("preferences.json");
             let preferences = load_preferences(&preferences_path);
+            let _ = persist_preferences(&preferences_path, &preferences);
             let client = reqwest::Client::builder()
                 .timeout(Duration::from_secs(12))
                 .redirect(reqwest::redirect::Policy::none())
@@ -1156,6 +1198,8 @@ pub fn run() {
                     let _ = window.set_focus();
                 }
             }
+            #[cfg(target_os = "macos")]
+            register_space_change_fronting(app);
             #[cfg(debug_assertions)]
             {
                 let handle = app.handle().clone();
