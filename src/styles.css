@@ -47,6 +47,8 @@ button { font: inherit; }
 }
 .quota-card { color: #17191f; }
 .quota-card { animation: panel-in .16s ease-out both; transform-origin: center; }
+.quota-card--locked { animation: none; opacity: .7; }
+.quota-card--theme-dark.quota-card--locked { opacity: .82; }
 @keyframes panel-in { from { opacity: .88; transform: scale(.985); } to { opacity: 1; transform: scale(1); } }
 /* State palettes live only in src/lib/desktopPalette.ts. The application
    supplies the active theme/state variables at runtime; this stylesheet owns

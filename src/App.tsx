@@ -201,6 +201,7 @@ export default function App() {
   }, [operation.settingsFailed, preferences]);
 
   const handleHover = useCallback((value: boolean) => {
+    if (preferences.locked) return;
     if (collapseTimer.current !== null) {
       window.clearTimeout(collapseTimer.current);
       collapseTimer.current = null;
@@ -224,7 +225,7 @@ export default function App() {
       setCompact(true);
       void setWidgetExpanded(false).catch(() => setOperationError(operation.collapseFailed));
     }, 180);
-  }, [operation.collapseFailed, operation.expandFailed, preferences.stayExpanded, refresh]);
+  }, [operation.collapseFailed, operation.expandFailed, preferences.locked, preferences.stayExpanded, refresh]);
 
   useEffect(() => {
     if (!preferences.stayExpanded) return;
@@ -234,7 +235,7 @@ export default function App() {
   }, [operation.expandFailed, preferences.stayExpanded]);
 
   if (compact) {
-    return <QuotaOrb snapshot={current} language={language} onDrag={() => startDragging()} onHover={handleHover} theme={theme} skin={skin} style={cardStyle} />;
+    return <QuotaOrb snapshot={current} language={language} onDrag={() => startDragging()} onHover={handleHover} theme={theme} skin={skin} style={cardStyle} locked={preferences.locked} />;
   }
 
   return (

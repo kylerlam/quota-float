@@ -34,6 +34,7 @@ interface Props {
   theme?: WidgetTheme;
   skin?: WidgetSkin;
   style?: CSSProperties;
+  locked?: boolean;
 }
 
 function StatusIcon({ status, expired = false }: { status: ProviderSnapshot["status"]; expired?: boolean }) {
@@ -135,11 +136,11 @@ export const QuotaCard = memo(function QuotaCard({
 
   return (
     <main
-      className={`quota-card quota-card--${snapshot.status} quota-card--${tier}${theme ? ` quota-card--theme-${theme}` : ""}${skin !== "default" ? ` quota-card--skin-${skin}` : ""}`}
+      className={`quota-card quota-card--${snapshot.status} quota-card--${tier}${theme ? ` quota-card--theme-${theme}` : ""}${skin !== "default" ? ` quota-card--skin-${skin}` : ""}${preferences.locked ? " quota-card--locked" : ""}`}
       style={style}
-      onMouseEnter={() => onHover(true)}
-      onMouseLeave={() => onHover(false)}
-      onMouseDown={(event) => { if (event.button === 0) void onDrag(); }}
+      onMouseEnter={() => { if (!preferences.locked) onHover(true); }}
+      onMouseLeave={() => { if (!preferences.locked) onHover(false); }}
+      onMouseDown={(event) => { if (!preferences.locked && event.button === 0) void onDrag(); }}
     >
       <div className="aurora" aria-hidden="true" />
       <span className="sr-only" aria-live="polite">{available && displayPercent !== null ? (displayingWeeklyAsPrimary ? t.weeklyAvailableLabel(displayPercent) : t.availableLabel(displayPercent)) : message}</span>
@@ -213,7 +214,7 @@ export const QuotaCard = memo(function QuotaCard({
   );
 });
 
-export const QuotaOrb = memo(function QuotaOrb({ snapshot, onDrag, onHover, language = "zh-CN", theme, skin = "default", style }: Pick<Props, "snapshot" | "onDrag" | "onHover" | "theme" | "skin" | "style"> & { language?: Language }) {
+export const QuotaOrb = memo(function QuotaOrb({ snapshot, onDrag, onHover, language = "zh-CN", theme, skin = "default", style, locked = false }: Pick<Props, "snapshot" | "onDrag" | "onHover" | "theme" | "skin" | "style" | "locked"> & { language?: Language }) {
   const [idle, setIdle] = useState(false);
   const idleTimer = useRef<number | null>(null);
   const activeLanguage = normalizeLanguage(language);
@@ -236,13 +237,15 @@ export const QuotaOrb = memo(function QuotaOrb({ snapshot, onDrag, onHover, lang
       : computerErrorUnavailableUrl;
 
   useEffect(() => {
+    if (locked) return;
     idleTimer.current = window.setTimeout(() => setIdle(true), 2000);
     return () => {
       if (idleTimer.current !== null) window.clearTimeout(idleTimer.current);
     };
-  }, []);
+  }, [locked]);
 
   const handleMouseEnter = () => {
+    if (locked) return;
     if (idleTimer.current !== null) window.clearTimeout(idleTimer.current);
     setIdle(false);
     onHover(true);
@@ -250,11 +253,11 @@ export const QuotaOrb = memo(function QuotaOrb({ snapshot, onDrag, onHover, lang
 
   return (
     <main
-      className={`quota-orb quota-card--${snapshot.status} quota-card--${tier}${theme ? ` quota-orb--theme-${theme}` : ""}${skin !== "default" ? ` quota-orb--skin-${skin}` : ""}${displayingWeeklyAsPrimary ? " quota-orb--weekly" : ""}${idle ? " quota-orb--idle" : ""}`}
+      className={`quota-orb quota-card--${snapshot.status} quota-card--${tier}${theme ? ` quota-orb--theme-${theme}` : ""}${skin !== "default" ? ` quota-orb--skin-${skin}` : ""}${displayingWeeklyAsPrimary ? " quota-orb--weekly" : ""}${idle || locked ? " quota-orb--idle" : ""}`}
       style={style}
       onMouseEnter={handleMouseEnter}
-      onMouseLeave={() => onHover(false)}
-      onMouseDown={(event) => { if (event.button === 0) void onDrag(); }}
+      onMouseLeave={() => { if (!locked) onHover(false); }}
+      onMouseDown={(event) => { if (!locked && event.button === 0) void onDrag(); }}
       aria-label={available ? (displayingWeeklyAsPrimary ? t.weeklyAvailableLabel(displayPercent!) : t.availableLabel(displayPercent!)) : localizedBackendMessage(snapshot.message, activeLanguage) ?? t.unavailableStatus}
     >
       <div className="aurora" aria-hidden="true" />
