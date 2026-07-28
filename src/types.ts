@@ -3,7 +3,7 @@ export type SnapshotStatus = "ok" | "stale" | "loading" | "unavailable" | "signe
 export type Language = "zh-CN" | "en";
 export type WidgetTheme = "light" | "dark";
 export type AppearancePreference = "system" | WidgetTheme;
-export type WidgetSkin = "default" | "blur" | "computer";
+export type WidgetSkin = "default" | "blur" | "computer" | "mac-glass" | "tvos-focus" | "liquid-glass";
 
 export interface UsageWindow {
   remainingPercent: number;

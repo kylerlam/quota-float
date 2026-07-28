@@ -91,7 +91,6 @@ struct WidgetGeometryState {
     dock: DockState,
     collapsed_rect: WidgetRect,
     expanded_rect: Option<WidgetRect>,
-    user_moved_expanded: bool,
 }
 
 struct AppState {
@@ -425,33 +424,29 @@ fn collapsed_geometry_for_expand(
     previous: Option<WidgetGeometryState>,
 ) -> (WidgetRect, DockState) {
     if let Some(previous) = previous {
-        let can_reuse_anchor = matches!(previous.mode, WidgetMode::Collapsed)
-            || (matches!(previous.mode, WidgetMode::Expanded) && !previous.user_moved_expanded);
-        if can_reuse_anchor {
-            let position = if previous.dock.is_docked() {
-                snap_position(
-                    previous.collapsed_rect.position,
-                    collapsed_size,
-                    previous.dock,
-                    monitor,
-                    safe_inset,
-                )
-            } else {
-                clamp_position_to_monitor(
-                    previous.collapsed_rect.position,
-                    collapsed_size,
-                    monitor,
-                    safe_inset,
-                )
-            };
-            return (
-                WidgetRect {
-                    position,
-                    size: collapsed_size,
-                },
+        let position = if previous.dock.is_docked() {
+            snap_position(
+                previous.collapsed_rect.position,
+                collapsed_size,
                 previous.dock,
-            );
-        }
+                monitor,
+                safe_inset,
+            )
+        } else {
+            clamp_position_to_monitor(
+                previous.collapsed_rect.position,
+                collapsed_size,
+                monitor,
+                safe_inset,
+            )
+        };
+        return (
+            WidgetRect {
+                position,
+                size: collapsed_size,
+            },
+            previous.dock,
+        );
     }
 
     let current_collapsed = WidgetRect {
@@ -519,12 +514,24 @@ fn infer_mode(rect: WidgetRect, collapsed_size: PhysicalSize<u32>) -> WidgetMode
     }
 }
 
+fn collapsed_restore_candidate(
+    current_position: PhysicalPosition<i32>,
+    previous: Option<WidgetGeometryState>,
+) -> PhysicalPosition<i32> {
+    previous
+        .map(|value| value.collapsed_rect.position)
+        .unwrap_or(current_position)
+}
+
 #[tauri::command]
 fn expand_widget(
     work_area: Option<WorkAreaPayload>,
     app: AppHandle,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
+    if preferences_lock(state.inner()).locked {
+        return Ok(());
+    }
     let window = app
         .get_webview_window("widget")
         .ok_or_else(|| "widget window missing".to_string())?;
@@ -573,7 +580,6 @@ fn expand_widget(
             dock,
             collapsed_rect,
             expanded_rect: Some(expanded_rect),
-            user_moved_expanded: false,
         });
     }
 
@@ -646,10 +652,28 @@ mod geometry_tests {
         );
         assert_eq!(position, PhysicalPosition::new(1516, 666));
     }
+
+    #[test]
+    fn collapse_restores_the_original_anchor_after_expanded_window_moves() {
+        let previous = WidgetGeometryState {
+            mode: WidgetMode::Expanded,
+            dock: DockState::default(),
+            collapsed_rect: rect(420, 260, 80),
+            expanded_rect: Some(rect(650, 500, 314)),
+        };
+        let candidate = collapsed_restore_candidate(
+            PhysicalPosition::new(650, 500),
+            Some(previous),
+        );
+        assert_eq!(candidate, PhysicalPosition::new(420, 260));
+    }
 }
 
 #[tauri::command]
 fn collapse_widget(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
+    if preferences_lock(state.inner()).locked {
+        return Ok(());
+    }
     let window = app
         .get_webview_window("widget")
         .ok_or_else(|| "widget window missing".to_string())?;
@@ -668,16 +692,7 @@ fn collapse_widget(app: AppHandle, state: State<'_, AppState>) -> Result<(), Str
     };
     let threshold = logical_to_physical(SNAP_THRESHOLD_LOGICAL, scale_factor) as i32;
     let previous = state.geometry.lock().ok().and_then(|value| *value);
-    let user_moved_expanded = previous
-        .map(|value| value.user_moved_expanded)
-        .unwrap_or(false);
-    let candidate = if user_moved_expanded {
-        current.position
-    } else {
-        previous
-            .map(|value| value.collapsed_rect.position)
-            .unwrap_or(current.position)
-    };
+    let candidate = collapsed_restore_candidate(current.position, previous);
     let dock = detect_dock(
         candidate,
         collapsed_size,
@@ -700,7 +715,6 @@ fn collapse_widget(app: AppHandle, state: State<'_, AppState>) -> Result<(), Str
             dock,
             collapsed_rect,
             expanded_rect: None,
-            user_moved_expanded: false,
         });
     }
     window
@@ -713,6 +727,9 @@ fn collapse_widget(app: AppHandle, state: State<'_, AppState>) -> Result<(), Str
 
 #[tauri::command]
 fn begin_widget_drag(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
+    if preferences_lock(state.inner()).locked {
+        return Ok(());
+    }
     let window = app
         .get_webview_window("widget")
         .ok_or_else(|| "widget window missing".to_string())?;
@@ -738,6 +755,9 @@ fn begin_widget_drag(app: AppHandle, state: State<'_, AppState>) -> Result<(), S
 
 #[tauri::command]
 fn finish_widget_drag(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
+    if preferences_lock(state.inner()).locked {
+        return Ok(());
+    }
     let window = app
         .get_webview_window("widget")
         .ok_or_else(|| "widget window missing".to_string())?;
@@ -809,7 +829,6 @@ fn finish_widget_drag(app: AppHandle, state: State<'_, AppState>) -> Result<(), 
                     dock,
                     collapsed_rect,
                     expanded_rect: None,
-                    user_moved_expanded: false,
                 });
             }
         }
@@ -831,7 +850,6 @@ fn finish_widget_drag(app: AppHandle, state: State<'_, AppState>) -> Result<(), 
                 if let Some(mut value) = *geometry {
                     value.mode = WidgetMode::Expanded;
                     value.expanded_rect = Some(updated_rect);
-                    value.user_moved_expanded = true;
                     *geometry = Some(value);
                 }
             }
@@ -1011,16 +1029,19 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
     let show = MenuItem::with_id(app, "show", "Show / Hide", true, None::<&str>)?;
     let refresh = MenuItem::with_id(app, "refresh", "Refresh now", true, None::<&str>)?;
     let update = MenuItem::with_id(app, "update", "Check for updates", true, None::<&str>)?;
-    let unlock = MenuItem::with_id(app, "unlock", "Unlock widget", true, None::<&str>)?;
     let pin = MenuItem::with_id(app, "pin", "Pin / Unpin Codex", true, None::<&str>)?;
     let always_on_top = CheckMenuItem::with_id(app, "always-on-top", "Always on top", true, false, None::<&str>)?;
+    let locked = CheckMenuItem::with_id(app, "locked", "Lock interactions", true, false, None::<&str>)?;
     let language = MenuItem::with_id(app, "language", "Switch Language / 切换语言", true, None::<&str>)?;
     let theme_system = CheckMenuItem::with_id(app, "theme-system", "Follow system", true, false, None::<&str>)?;
     let theme_dark = CheckMenuItem::with_id(app, "theme-dark", "Dark", true, false, None::<&str>)?;
     let theme_light = CheckMenuItem::with_id(app, "theme-light", "Light", true, false, None::<&str>)?;
     let skin_blur = CheckMenuItem::with_id(app, "skin-blur", "Blur", true, false, None::<&str>)?;
     let skin_computer = CheckMenuItem::with_id(app, "skin-computer", "Computer", true, false, None::<&str>)?;
-    let appearance = Submenu::with_items(app, "Appearance / 外观", true, &[&theme_system, &theme_dark, &theme_light, &skin_blur, &skin_computer])?;
+    let skin_mac_glass = CheckMenuItem::with_id(app, "skin-mac-glass", "Mac Glass", true, false, None::<&str>)?;
+    let skin_tvos_focus = CheckMenuItem::with_id(app, "skin-tvos-focus", "tvOS Focus", true, false, None::<&str>)?;
+    let skin_liquid_glass = CheckMenuItem::with_id(app, "skin-liquid-glass", "Liquid Glass", true, false, None::<&str>)?;
+    let appearance = Submenu::with_items(app, "Appearance / 外观", true, &[&theme_system, &theme_dark, &theme_light, &skin_blur, &skin_computer, &skin_mac_glass, &skin_tvos_focus, &skin_liquid_glass])?;
     let autostart = CheckMenuItem::with_id(
         app, "autostart", "Start at login", true,
         app.autolaunch().is_enabled().unwrap_or(false), None::<&str>,
@@ -1028,27 +1049,34 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
     #[cfg(debug_assertions)]
     let test_short_window = CheckMenuItem::with_id(app, "debug-short-window", "Test: simulate 5-hour quota", true, false, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
-    let settings = Submenu::with_items(app, "Settings / 设置", true, &[&always_on_top, &unlock, &pin, &language, &autostart])?;
+    let settings = Submenu::with_items(app, "Settings / 设置", true, &[&always_on_top, &locked, &pin, &language, &autostart])?;
 
     let preferences = app.try_state::<AppState>()
         .and_then(|state| state.preferences.lock().ok().map(|prefs| prefs.clone()))
         .unwrap_or_default();
     let english = preferences.language == "en";
     let _ = always_on_top.set_checked(preferences.always_on_top);
+    let _ = locked.set_checked(preferences.locked);
     let _ = theme_system.set_checked(preferences.selected_skin == "default" && preferences.appearance == "system");
     let _ = theme_dark.set_checked(preferences.selected_skin == "default" && preferences.appearance == "dark");
     let _ = theme_light.set_checked(preferences.selected_skin == "default" && preferences.appearance == "light");
     let _ = skin_blur.set_checked(preferences.selected_skin == "blur");
     let _ = skin_computer.set_checked(preferences.selected_skin == "computer");
+    let _ = skin_mac_glass.set_checked(preferences.selected_skin == "mac-glass");
+    let _ = skin_tvos_focus.set_checked(preferences.selected_skin == "tvos-focus");
+    let _ = skin_liquid_glass.set_checked(preferences.selected_skin == "liquid-glass");
     if !english {
         let _ = show.set_text("显示 / 隐藏");
         let _ = refresh.set_text("立即刷新");
         let _ = update.set_text(update_menu_label(&preferences.language, false));
-        let _ = unlock.set_text("解锁悬浮窗");
         let _ = always_on_top.set_text("置顶");
+        let _ = locked.set_text("锁定");
         let _ = pin.set_text("固定 / 取消固定 Codex");
         let _ = language.set_text("Switch to English");
         let _ = appearance.set_text("外观");
+        let _ = skin_mac_glass.set_text("Mac 桌面玻璃");
+        let _ = skin_tvos_focus.set_text("tvOS 焦点玻璃");
+        let _ = skin_liquid_glass.set_text("磨砂液态玻璃");
         let _ = autostart.set_text("开机启动");
         let _ = quit.set_text("退出");
     }
@@ -1064,11 +1092,15 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
     let update_indicator = update.clone();
     let autostart_menu = autostart.clone();
     let always_on_top_state = always_on_top.clone();
+    let locked_state = locked.clone();
     let theme_system_state = theme_system.clone();
     let theme_dark_state = theme_dark.clone();
     let theme_light_state = theme_light.clone();
     let skin_blur_state = skin_blur.clone();
     let skin_computer_state = skin_computer.clone();
+    let skin_mac_glass_state = skin_mac_glass.clone();
+    let skin_tvos_focus_state = skin_tvos_focus.clone();
+    let skin_liquid_glass_state = skin_liquid_glass.clone();
     #[cfg(debug_assertions)]
     let test_short_window_menu = test_short_window.clone();
     builder.on_menu_event(move |app, event| match event.id.as_ref() {
@@ -1088,16 +1120,22 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
                 }
             }
         }
-        "unlock" => {
-            let _ = apply_lock(app, false);
-            if let Some(state) = app.try_state::<AppState>() {
-                if let Ok(mut prefs) = state.preferences.lock() {
-                    prefs.locked = false;
-                    let _ = persist_preferences(&state.preferences_path, &prefs);
+        "locked" => if let Some(state) = app.try_state::<AppState>() {
+            if let Ok(mut prefs) = state.preferences.lock() {
+                let previous = prefs.clone();
+                prefs.locked = !prefs.locked;
+                if persist_preferences(&state.preferences_path, &prefs).is_ok()
+                    && apply_lock(app, prefs.locked).is_ok()
+                {
+                    let _ = locked_state.set_checked(prefs.locked);
                     let _ = app.emit_to("widget", "preferences-changed", prefs.clone());
+                } else {
+                    *prefs = previous;
+                    let _ = persist_preferences(&state.preferences_path, &prefs);
+                    let _ = locked_state.set_checked(prefs.locked);
                 }
             }
-        }
+        },
         "pin" => if let Some(state) = app.try_state::<AppState>() {
             if let Ok(mut prefs) = state.preferences.lock() {
                 prefs.pinned_provider = if prefs.pinned_provider.is_some() { None } else { Some("codex".into()) };
@@ -1140,20 +1178,30 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
                     let _ = theme_light_state.set_checked(prefs.appearance == "light");
                     let _ = skin_blur_state.set_checked(false);
                     let _ = skin_computer_state.set_checked(false);
+                    let _ = skin_mac_glass_state.set_checked(false);
+                    let _ = skin_tvos_focus_state.set_checked(false);
+                    let _ = skin_liquid_glass_state.set_checked(false);
                     let _ = app.emit_to("widget", "preferences-changed", prefs.clone());
                 }
             }
         },
-        "skin-blur" | "skin-computer" => if let Some(state) = app.try_state::<AppState>() {
+        "skin-blur" | "skin-computer" | "skin-mac-glass" | "skin-tvos-focus" | "skin-liquid-glass" => if let Some(state) = app.try_state::<AppState>() {
             if let Ok(mut prefs) = state.preferences.lock() {
                 prefs.selected_skin = event.id.as_ref().strip_prefix("skin-").unwrap_or("blur").into();
-                prefs.appearance = "light".into();
+                prefs.appearance = if prefs.selected_skin == "mac-glass" || prefs.selected_skin == "tvos-focus" {
+                    "dark".into()
+                } else {
+                    "light".into()
+                };
                 if persist_preferences(&state.preferences_path, &prefs).is_ok() {
                     let _ = theme_system_state.set_checked(false);
                     let _ = theme_dark_state.set_checked(false);
                     let _ = theme_light_state.set_checked(false);
                     let _ = skin_blur_state.set_checked(prefs.selected_skin == "blur");
                     let _ = skin_computer_state.set_checked(prefs.selected_skin == "computer");
+                    let _ = skin_mac_glass_state.set_checked(prefs.selected_skin == "mac-glass");
+                    let _ = skin_tvos_focus_state.set_checked(prefs.selected_skin == "tvos-focus");
+                    let _ = skin_liquid_glass_state.set_checked(prefs.selected_skin == "liquid-glass");
                     let _ = app.emit_to("widget", "preferences-changed", prefs.clone());
                 }
             }

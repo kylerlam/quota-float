@@ -103,10 +103,10 @@ button { font: inherit; }
 .quota-card--theme-dark .aurora,
 .quota-orb--theme-dark .aurora {
   background:
-    radial-gradient(circle at 28% 68%, var(--glow, #181056) 0 18%, transparent var(--glow-fade, 43%)),
-    radial-gradient(circle at var(--warm-position, 82% 82%), var(--warm, #0D0830) 0 14%, transparent var(--warm-fade, 34%)),
-    radial-gradient(circle at 52% 12%, var(--cool, #213183) 0 22%, transparent 52%),
-    linear-gradient(var(--gradient-angle, 145deg), var(--cool, #213183), var(--linear-mid, #181056) 47%, var(--linear-warm, var(--warm, #0D0830)) 83%, var(--linear-end, #0D0830));
+    radial-gradient(circle at 28% 68%, var(--glow, #252A31) 0 18%, transparent var(--glow-fade, 43%)),
+    radial-gradient(circle at var(--warm-position, 82% 82%), var(--warm, #111419) 0 14%, transparent var(--warm-fade, 34%)),
+    radial-gradient(circle at 52% 12%, var(--cool, #3B4048) 0 22%, transparent 52%),
+    linear-gradient(var(--gradient-angle, 145deg), var(--cool, #3B4048), var(--linear-mid, #20242a) 47%, var(--linear-warm, var(--warm, #111419)) 83%, var(--linear-end, #0D1014));
 }
 
 @keyframes drift { to { transform: translate3d(5%, 4%, 0) scale(1.16) rotate(2deg); } }
@@ -239,6 +239,92 @@ button { font: inherit; }
 .orb-weekly-badge b { position: relative; z-index: 1; display: grid; height: 13px; place-items: center; color: #fff; font-size: 9px; font-weight: 500; line-height: 1; letter-spacing: .01em; transform: translateY(0); }
 .quota-orb--theme-dark .orb-weekly-badge { color: #536AD2; }
 .quota-orb--theme-dark .orb-metric { color: #FFFFFF; }
+
+/* Original adaptations from the local design vault. They reuse only the
+   vault's reusable tokens and do not include proprietary platform assets. */
+.quota-card--skin-mac-glass,
+.quota-orb--skin-mac-glass {
+  color: #f7fafc;
+  border: 1px solid rgba(255,255,255,.18);
+  background:
+    radial-gradient(circle at 16% 12%, rgba(102,227,255,.18), transparent 38%),
+    linear-gradient(145deg, rgba(19,38,52,.82), rgba(8,19,31,.92));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.22), inset 0 0 0 1px rgba(255,255,255,.05);
+  backdrop-filter: blur(22px) saturate(1.22);
+  -webkit-backdrop-filter: blur(22px) saturate(1.22);
+}
+.quota-card--skin-mac-glass { border-radius: 24px; }
+.quota-orb--skin-mac-glass { border-radius: 28px; }
+.quota-card--skin-mac-glass .aurora,
+.quota-orb--skin-mac-glass .aurora { display: none; }
+.quota-card--skin-mac-glass .eyebrow,
+.quota-card--skin-mac-glass .updated,
+.quota-card--skin-mac-glass .reset-time,
+.quota-card--skin-mac-glass .weekly-metric,
+.quota-card--skin-mac-glass .weekly-metric span,
+.quota-card--skin-mac-glass .error-state p { color: #b7c4cf; text-shadow: none; }
+.quota-card--skin-mac-glass .primary-metric,
+.quota-orb--skin-mac-glass .orb-metric { color: #f7fafc; }
+.quota-card--skin-mac-glass .card-actions button,
+.quota-card--skin-mac-glass .usage-indicator { border-color: rgba(255,255,255,.18); background: rgba(19,38,52,.58); box-shadow: inset 0 1px 0 rgba(255,255,255,.12); }
+
+.quota-card--skin-tvos-focus,
+.quota-orb--skin-tvos-focus {
+  color: #f7fafc;
+  border: 2px solid rgba(255,255,255,.2);
+  background:
+    radial-gradient(circle at 76% 22%, rgba(57,43,99,.72), transparent 42%),
+    radial-gradient(circle at 18% 78%, rgba(16,42,67,.86), transparent 48%),
+    #05080d;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.2), inset 0 0 32px rgba(255,255,255,.04);
+}
+.quota-card--skin-tvos-focus { border-radius: 28px; }
+.quota-orb--skin-tvos-focus { border-radius: 26px; }
+.quota-card--skin-tvos-focus .aurora,
+.quota-orb--skin-tvos-focus .aurora { display: none; }
+.quota-card--skin-tvos-focus .eyebrow { font-size: 15px; letter-spacing: .2em; }
+.quota-card--skin-tvos-focus .eyebrow,
+.quota-card--skin-tvos-focus .primary-metric,
+.quota-orb--skin-tvos-focus .orb-metric { color: #f7fafc; text-shadow: 0 2px 18px rgba(0,0,0,.5); }
+.quota-card--skin-tvos-focus .updated,
+.quota-card--skin-tvos-focus .reset-time,
+.quota-card--skin-tvos-focus .weekly-metric,
+.quota-card--skin-tvos-focus .weekly-metric span,
+.quota-card--skin-tvos-focus .error-state p { color: #b5c0ca; }
+.quota-card--skin-tvos-focus .card-actions,
+.quota-card--skin-tvos-focus .usage-indicator { border-radius: 999px; background: rgba(18,27,38,.56); backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px); }
+.quota-card--skin-tvos-focus .card-actions { padding: 3px; box-shadow: inset 0 1px 0 rgba(255,255,255,.16); }
+.quota-card--skin-tvos-focus .card-actions button { border-color: rgba(255,255,255,.2); background: rgba(255,255,255,.08); }
+
+.quota-card--skin-liquid-glass,
+.quota-orb--skin-liquid-glass {
+  color: #17202a;
+  border: 1px solid rgba(79,103,134,.18);
+  background-color: rgba(234,242,248,.72);
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.58), rgba(255,255,255,.3)),
+    rgba(234,242,248,.72);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.72), inset 0 0 0 1px rgba(79,103,134,.08);
+  backdrop-filter: blur(26px) saturate(1.22);
+  -webkit-backdrop-filter: blur(26px) saturate(1.22);
+}
+.quota-card--skin-liquid-glass { border-radius: 40px; }
+.quota-orb--skin-liquid-glass { border-radius: 999px; }
+.quota-card--skin-liquid-glass .aurora,
+.quota-orb--skin-liquid-glass .aurora { opacity: .18; filter: saturate(.72) brightness(1.08); }
+.quota-card--skin-liquid-glass .eyebrow,
+.quota-card--skin-liquid-glass .updated,
+.quota-card--skin-liquid-glass .reset-time,
+.quota-card--skin-liquid-glass .weekly-metric,
+.quota-card--skin-liquid-glass .weekly-metric span,
+.quota-card--skin-liquid-glass .error-state p { color: rgba(23,32,42,.72); text-shadow: none; }
+.quota-card--skin-liquid-glass .primary-metric,
+.quota-orb--skin-liquid-glass .orb-metric { color: #17202a; }
+.quota-card--skin-liquid-glass .card-actions { padding: 3px; border-radius: 999px; background: rgba(255,255,255,.34); box-shadow: inset 0 1px 0 rgba(255,255,255,.58); }
+.quota-card--skin-liquid-glass .card-actions button,
+.quota-card--skin-liquid-glass .usage-indicator { border-color: rgba(255,255,255,.48); color: #53616d; background: rgba(255,255,255,.46); backdrop-filter: blur(26px); -webkit-backdrop-filter: blur(26px); }
+.quota-card--skin-liquid-glass .provider-mark { border-radius: 50%; background: rgba(23,32,42,.84); box-shadow: inset 0 1px 0 rgba(255,255,255,.2); }
+
 /* Computer is a CSS-built optional skin: the case, status stripe, display,
    and dot-matrix progress are responsive to the existing widget dimensions. */
 .quota-card--skin-computer { --computer-ink: #244f7b; --computer-screen: #b9d7eb; position: relative; border: 0; border-radius: 0; color: #20201d; background: url("../assets/computer-bg.svg") center / 100% 100% no-repeat; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
@@ -396,6 +482,10 @@ button { font: inherit; }
 .screenshot-stage { width: 100vw; height: 100vh; display: grid; place-content: center; background: #f6f7fb; overflow: hidden; }
 .screenshot-stage--states { grid-template-columns: repeat(3, 320px); gap: 28px; align-content: center; justify-content: center; }
 .design-stage { min-height: 100vh; display: grid; place-content: center; justify-items: center; gap: 18px; padding: 60px; background-image: linear-gradient(45deg, #e6e8ec 25%, transparent 25%), linear-gradient(-45deg, #e6e8ec 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e6e8ec 75%), linear-gradient(-45deg, transparent 75%, #e6e8ec 75%); background-size: 24px 24px; background-position: 0 0, 0 12px, 12px -12px, -12px 0; }
+.design-page-tabs { max-width: 620px; display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; padding: 5px; border: 1px solid rgba(99,108,128,.16); border-radius: 14px; background: rgba(255,255,255,.84); box-shadow: 0 8px 24px rgba(36,42,60,.08); }
+.design-page-tabs button { min-height: 32px; padding: 0 11px; border: 0; border-radius: 9px; color: #626a78; background: transparent; cursor: pointer; font-size: 11px; font-weight: 650; }
+.design-page-tabs button:hover { color: #202631; background: rgba(105,137,190,.1); }
+.design-page-tabs button.is-active { color: white; background: #315f9f; }
 .design-card-frame { width: 314px; height: 314px; box-shadow: none; border-radius: var(--card-radius); }
 .design-orb-frame { width: 80px; height: 80px; box-shadow: none; border-radius: 24px; }
 .design-preview-switch { max-width: 520px; display: flex; flex-wrap: wrap; justify-content: center; gap: 7px; padding: 5px; border: 1px solid rgba(99,108,128,.16); border-radius: 14px; background: rgba(255,255,255,.84); box-shadow: 0 8px 24px rgba(36,42,60,.08); }

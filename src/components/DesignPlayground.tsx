@@ -8,6 +8,7 @@ type ErrorMode = "unavailable" | "stale" | "signed_out";
 type QuotaOrbMode = "healthy-orb" | "caution-orb" | "critical-orb";
 type Mode = 74 | 35 | 8 | "orb" | "weekly" | "weekly-orb" | ErrorMode | QuotaOrbMode | `${ErrorMode}-orb`;
 type Controls = { radius: number; numberSize: number; progressHeight: number; brightness: number; motion: number };
+type PreviewTab = "widget" | Exclude<WidgetSkin, "default">;
 
 const base: ProviderSnapshot = {
   provider: "codex", displayName: "CODEX", plan: "PRO",
@@ -20,6 +21,14 @@ const defaults: Controls = { radius: 38, numberSize: 64, progressHeight: 6, brig
 const names: DesktopPaletteName[] = ["healthy", "caution", "critical", "unavailable", "stale", "signed_out"];
 const modes: Array<[Mode, string]> = [[74, "healthy"], [35, "caution"], [8, "critical"], ["weekly", "weekly"], ["healthy-orb", "healthyOrb"], ["caution-orb", "cautionOrb"], ["critical-orb", "criticalOrb"], ["weekly-orb", "weeklyOrb"], ["unavailable", "unavailable"], ["stale", "stale"], ["signed_out", "signedOut"], ["unavailable-orb", "unavailableOrb"], ["stale-orb", "staleOrb"], ["signed_out-orb", "signedOutOrb"]];
 const fields = ["--cool", "--glow", "--warm", "--progress-start", "--progress-end"] as const;
+const previewTabs: Array<{ id: PreviewTab; label: Record<Language, string> }> = [
+  { id: "widget", label: { "zh-CN": "组件", en: "Widget" } },
+  { id: "blur", label: { "zh-CN": "Blur", en: "Blur" } },
+  { id: "computer", label: { "zh-CN": "Computer", en: "Computer" } },
+  { id: "mac-glass", label: { "zh-CN": "Mac 桌面玻璃", en: "Mac Glass" } },
+  { id: "tvos-focus", label: { "zh-CN": "tvOS 焦点玻璃", en: "tvOS Focus" } },
+  { id: "liquid-glass", label: { "zh-CN": "磨砂液态玻璃", en: "Liquid Glass" } },
+];
 const workbenchCopy = {
   "zh-CN": {
     widget: "组件", blur: "Blur 皮肤", computer: "Computer 皮肤",
@@ -68,7 +77,7 @@ export function DesignPlayground() {
   const [mode, setMode] = useState<Mode>(() => (query.get("mode") as Mode) || 74);
   const [controls, setControls] = useState<Controls>(defaults);
   const [language, setLanguage] = useState<Language>(() => query.get("language") === "en" ? "en" : "zh-CN");
-  const [previewTab, setPreviewTab] = useState<"widget" | "blur" | "computer">("widget");
+  const [previewTab, setPreviewTab] = useState<PreviewTab>("widget");
   const snapshot = useMemo(() => makeSnapshot(mode), [mode]);
   const active = paletteName(snapshot);
   const t = workbenchCopy[language];
@@ -85,14 +94,14 @@ export function DesignPlayground() {
 
   return <main className={`design-workbench design-workbench--${theme}`}>
     <section className="design-stage" aria-label={t.widget}>
-      <div className="design-page-tabs" role="tablist" aria-label={t.widget}><button role="tab" aria-selected={previewTab === "widget"} className={previewTab === "widget" ? "is-active" : ""} onClick={() => setPreviewTab("widget")}>{t.widget}</button><button role="tab" aria-selected={previewTab === "blur"} className={previewTab === "blur" ? "is-active" : ""} onClick={() => setPreviewTab("blur")}>{t.blur}</button><button role="tab" aria-selected={previewTab === "computer"} className={previewTab === "computer" ? "is-active" : ""} onClick={() => setPreviewTab("computer")}>{t.computer}</button></div>
+      <div className="design-page-tabs" role="tablist" aria-label={t.widget}>{previewTabs.map((tab) => <button key={tab.id} role="tab" aria-selected={previewTab === tab.id} className={previewTab === tab.id ? "is-active" : ""} onClick={() => setPreviewTab(tab.id)}>{tab.label[language]}</button>)}</div>
       <><div className="design-preview-switch" role="group" aria-label={t.previewState}>
         {modes.map(([value, label]) => <button key={label} className={mode === value ? "is-active" : ""} onClick={() => setMode(value)}>{t[label as keyof typeof t]}</button>)}
       </div>
       <div className="design-theme-switch" role="group" aria-label={t.previewTheme}>
         {(["light", "dark"] as const).map((value) => <button key={value} className={theme === value ? "is-active" : ""} onClick={() => setTheme(value)}>{value === "light" ? t.light : t.dark}</button>)}
       </div>
-      <div className={isOrb ? "design-orb-frame" : "design-card-frame"}>{render(snapshot, previewTab === "blur" ? "blur" : previewTab === "computer" ? "computer" : "default")}</div></>
+      <div className={isOrb ? "design-orb-frame" : "design-card-frame"}>{render(snapshot, previewTab === "widget" ? "default" : previewTab)}</div></>
     </section>
     <aside className="design-controls">
       <header><p className="design-kicker">QUOTA FLOAT · PREVIEW</p><h1>{t.geometryPreview}</h1><p className="design-description">{t.description}</p></header>

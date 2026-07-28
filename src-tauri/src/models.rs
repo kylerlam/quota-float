@@ -108,6 +108,9 @@ impl WidgetPreferences {
         if self.selected_skin != "default"
             && self.selected_skin != "blur"
             && self.selected_skin != "computer"
+            && self.selected_skin != "mac-glass"
+            && self.selected_skin != "tvos-focus"
+            && self.selected_skin != "liquid-glass"
         {
             self.selected_skin = default_skin();
         }
