@@ -47,19 +47,17 @@ git push origin main
 
 ## 生成可分享版本
 
-推送 `v*` tag 会触发 release workflow：
+Fork 未配置上游更新签名私钥时，先在 macOS 使用 CI 模式生成未签名 Universal DMG：
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+CI=true npm run tauri -- build --target universal-apple-darwin --bundles dmg --config '{"bundle":{"createUpdaterArtifacts":false}}'
 ```
 
-构建完成后，到 GitHub 仓库的 Releases 页面检查 draft release。附件应包含：
+验证后推送版本标签，创建公开 GitHub Release，并上传：
 
-- `quota-float-windows-unsigned.zip`
-- `quota-float-macos-universal-unsigned.zip`
+- macOS Universal `.dmg`
 
-确认无误后点击 Publish release，然后把 Release 链接发给用户。
+确认附件上传完成后，把 Release 链接发给用户。
 
 ## 发给 Mac 用户时的说明
 

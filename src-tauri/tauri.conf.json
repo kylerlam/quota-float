@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Quota Float",
-  "version": "0.2.4",
+  "version": "0.3.0",
   "identifier": "app.quotafloat.desktop",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -55,7 +55,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDgwQjI3N0FFOEQyRUMzQjcKUldTM3d5Nk5ybmV5Z0gzVUhuWmE4Vk54bnU3WWV3Z1RTQU5TWTlQZ0pxVExhS2dZWkRNU2s5UDEK",
       "endpoints": [
-        "https://github.com/change-42-yhmm/quota-float/releases/latest/download/latest.json"
+        "https://github.com/kylerlam/quota-float/releases/latest/download/latest.json"
       ],
       "windows": {
         "installMode": "passive"

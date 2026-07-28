@@ -10,9 +10,9 @@ A lightweight Windows/macOS desktop widget that keeps your Codex quota visible f
 - Uses clear quota states for healthy, caution, and critical remaining usage.
 - Collapses into a small floating orb when idle, then expands on hover.
 - Indicates whether quota is currently being consumed.
-- Includes persistent expansion, always-on-top controls, and localized tray actions.
+- Includes persistent expansion, always-on-top and interaction-lock controls, and localized tray actions.
 - Falls back to a clearly marked weekly-quota view when the 5-hour window is unavailable.
-- Checks for app updates automatically and supports signed in-app updates on Windows.
+- Provides a GitHub Releases fallback for manually downloading new versions.
 - Shows reset credit count and available reset-credit expiration times when the quota service provides them.
 - Handles stale data, signed-out sessions, unavailable quota responses, and loading states without fabricating values.
 
@@ -58,21 +58,21 @@ Browser preview uses mock data. Real quota reading requires the Tauri desktop ap
 
 For normal users, download the latest installer from GitHub Releases:
 
-- Latest release: https://github.com/change-42-yhmm/quota-float/releases/latest
+- Latest release: https://github.com/kylerlam/quota-float/releases/latest
 - Windows: use the `.exe` or `.msi` installer.
 - macOS Universal: use the `.dmg` bundle.
 
-Updater artifacts are signed with the project's Tauri update key. Windows Authenticode signing and macOS notarization are separate platform-signing steps; builds without those certificates may still trigger SmartScreen or Gatekeeper warnings.
+Fork releases are currently unsigned. Windows may show an unknown-publisher warning, and macOS may require right-clicking the app and choosing Open or allowing it in System Settings -> Privacy & Security.
 
 ## Feedback
 
 Please use GitHub Issues for bugs, compatibility reports, and feature requests:
 
-https://github.com/change-42-yhmm/quota-float/issues
+https://github.com/kylerlam/quota-float/issues
 
 ## Optional skins
 
-Blur and Computer are included for every user and can be selected from the tray menu.
+Light, grey-space Dark, Blur, Computer, macOS Glass, tvOS Focus, and Liquid Glass are included for every user and can be selected from the Appearance menu.
 
 ### Dark healthy-state previews
 
@@ -140,7 +140,7 @@ src-tauri/target/release/quota-float.exe
 GitHub Actions are configured for:
 
 - CI on push/PR: frontend tests, Rust tests, web build, Tauri build.
-- `v*` tags: Windows and macOS Universal installers, updater signatures, `latest.json`, and a public GitHub Release.
+- Release artifacts from verified local or CI builds; the current macOS release includes an unsigned Universal DMG.
 
 See [docs/GITHUB-RELEASE-CHECKLIST.md](docs/GITHUB-RELEASE-CHECKLIST.md) before publishing a version for others.
 

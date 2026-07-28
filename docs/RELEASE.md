@@ -4,23 +4,21 @@
 
 Quota Float 使用同一套 React/CSS/Tauri 代码构建 Windows 和 macOS 版本。视觉效果、悬浮球、展开卡片、透明度、圆角和动画参数都应保持在共享前端代码中，避免维护 Windows/macOS 两套 UI。
 
-当前发布默认输出 unsigned 包：
+当前 Fork 的 `v0.3.0` 发布目标是：
 
-- `quota-float-windows-unsigned.zip`
-- `quota-float-macos-universal-unsigned.zip`
+- macOS Universal `.dmg`
 
 macOS 包使用 Universal 构建，同时支持 Apple Silicon 和 Intel Mac。
 
 ## 发布一个 GitHub 下载版本
 
-推送 `v*` tag 会触发 `.github/workflows/release.yml`，构建 Windows unsigned 包和 macOS Universal unsigned 包，并上传到草稿 GitHub Release。
+Fork 尚未配置上游的 Tauri 更新签名私钥。发布前先使用 CI 模式构建未签名 Universal DMG：
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+CI=true npm run tauri -- build --target universal-apple-darwin --bundles dmg --config '{"bundle":{"createUpdaterArtifacts":false}}'
 ```
 
-工作流完成后，到 GitHub Releases 检查草稿发布，确认说明和附件后手动发布。
+验证 DMG 后推送版本标签，创建公开 GitHub Release，并上传 DMG。现有签名发布工作流只有在 Fork 配置自己的更新签名密钥后才能重新启用。
 
 ## CI 与构建
 
