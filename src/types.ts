@@ -1,6 +1,6 @@
 export type ProviderId = "codex" | "claude";
 export type SnapshotStatus = "ok" | "stale" | "loading" | "unavailable" | "signed_out";
-export type Language = "zh-CN" | "en";
+export type Language = "zh-CN" | "zh-TW" | "en";
 export type WidgetTheme = "light" | "dark";
 export type AppearancePreference = "system" | WidgetTheme;
 export type WidgetSkin = "default" | "blur" | "computer" | "mac-glass" | "tvos-focus" | "liquid-glass";

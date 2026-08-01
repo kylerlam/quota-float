@@ -8,7 +8,7 @@ import { mergeSnapshots } from "./lib/snapshots";
 import { DESKTOP_PALETTES } from "./lib/desktopPalette";
 import type { ProviderSnapshot, WidgetPreferences, WidgetSkin, WidgetTheme } from "./types";
 
-const DEFAULT_PREFS: WidgetPreferences = { locked: false, alwaysOnTop: false, windowBehaviorVersion: 1, stayExpanded: false, pinnedProvider: null, autoRotateSeconds: 12, language: "zh-CN", appearance: "light", selectedSkin: "default" };
+const DEFAULT_PREFS: WidgetPreferences = { locked: false, alwaysOnTop: true, windowBehaviorVersion: 1, stayExpanded: false, pinnedProvider: null, autoRotateSeconds: 12, language: "zh-CN", appearance: "light", selectedSkin: "default" };
 const INITIAL_SNAPSHOT: ProviderSnapshot = {
   provider: "codex",
   displayName: "CODEX",
@@ -46,6 +46,13 @@ export default function App() {
     expandFailed: "组件展开失败。",
     collapseFailed: "组件收起失败。",
     releaseOpenFailed: "无法打开 GitHub Releases。",
+  } : language === "zh-TW" ? {
+    listenerFailed: "桌面事件監聽啟動失敗。",
+    settingsFailed: "設定儲存失敗，已恢復之前的狀態。",
+    alwaysOnTopFailed: "置頂狀態切換失敗。",
+    expandFailed: "元件展開失敗。",
+    collapseFailed: "元件收起失敗。",
+    releaseOpenFailed: "無法開啟 GitHub Releases。",
   } : {
     listenerFailed: "Desktop event listener failed to start.",
     settingsFailed: "Settings could not be saved. Previous state restored.",

@@ -57,13 +57,14 @@ function localizedBackendMessage(message: string | null, language: Language): st
   if (!message) return null;
   if (language === "en") return message;
   const normalized = message.toLowerCase();
-  if (normalized.includes("sign in") || normalized.includes("login")) return "Codex 登录已失效，请重新登录。";
-  if (normalized.includes("rate limited")) return "请求过于频繁，将稍后自动重试。";
-  if (normalized.includes("network")) return "网络不可用，将自动重试。";
-  if (normalized.includes("format")) return "额度响应格式已变化。";
-  if (normalized.includes("missing the 5h")) return "额度响应缺少 5 小时窗口。";
-  if (normalized.includes("refresh is already running")) return "额度正在刷新，请稍候。";
-  return message;
+  const traditional = language === "zh-TW";
+  if (normalized.includes("sign in") || normalized.includes("login")) return traditional ? "Codex 登入已失效，請重新登入。" : "Codex 登录已失效，请重新登录。";
+  if (normalized.includes("rate limited")) return traditional ? "請求過於頻繁，將稍後自動重試。" : "请求过于频繁，将稍后自动重试。";
+  if (normalized.includes("network")) return traditional ? "網路不可用，將自動重試。" : "网络不可用，将自动重试。";
+  if (normalized.includes("format")) return traditional ? "額度回應格式已變化。" : "额度响应格式已变化。";
+  if (normalized.includes("missing the 5h")) return traditional ? "額度回應缺少 5 小時視窗。" : "额度响应缺少 5 小时窗口。";
+  if (normalized.includes("refresh is already running")) return traditional ? "額度正在更新，請稍候。" : "额度正在刷新，请稍候。";
+  return traditional ? "額度服務暫時不可用，將自動重試。" : "额度服务暂时不可用，将自动重试。";
 }
 
 function BlurProgress({ percent, label }: { percent: number; label: string }) {

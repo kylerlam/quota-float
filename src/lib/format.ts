@@ -44,12 +44,14 @@ export function formatResetDate(value: string | null, language: Language = "zh-C
   }
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return t.dateUnknown;
-  return new Intl.DateTimeFormat(language === "en" ? "en-US" : "zh-CN", { month: "numeric", day: "numeric" }).format(date);
+  const locale = language === "en" ? "en-US" : language;
+  return new Intl.DateTimeFormat(locale, { month: "numeric", day: "numeric" }).format(date);
 }
 
 export function formatDateTime(value: string, language: Language): string {
   const t = copy[normalizeLanguage(language)];
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return t.creditExpiresUnknown;
-  return new Intl.DateTimeFormat(language === "en" ? "en-US" : "zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(date);
+  const locale = language === "en" ? "en-US" : language;
+  return new Intl.DateTimeFormat(locale, { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(date);
 }

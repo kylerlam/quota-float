@@ -19,7 +19,6 @@ use tauri::{
     AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, State, WindowEvent,
 };
 use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
-use tauri_plugin_updater::UpdaterExt;
 use tauri_plugin_window_state::Builder as WindowStateBuilder;
 
 // These are the light-theme visual dimensions. They deliberately do not vary
@@ -103,15 +102,125 @@ struct AppState {
     simulate_short_window_for_testing: Mutex<bool>,
     geometry: Mutex<Option<WidgetGeometryState>>,
     drag_mode: Mutex<Option<WidgetMode>>,
-    update_available: Mutex<bool>,
+    tray_menu: Mutex<Option<TrayMenuState>>,
 }
 
-fn update_menu_label(language: &str, update_available: bool) -> &'static str {
-    match (language == "en", update_available) {
-        (true, true) => "🟢 Check for updates",
-        (false, true) => "🟢 检查更新",
-        (true, false) => "Check for updates",
-        (false, false) => "检查更新",
+#[derive(Clone)]
+struct TrayMenuState {
+    show: CheckMenuItem<tauri::Wry>,
+    refresh: MenuItem<tauri::Wry>,
+    always_on_top: CheckMenuItem<tauri::Wry>,
+    locked: CheckMenuItem<tauri::Wry>,
+    pinned: CheckMenuItem<tauri::Wry>,
+    autostart: CheckMenuItem<tauri::Wry>,
+    settings: Submenu<tauri::Wry>,
+    language: Submenu<tauri::Wry>,
+    language_zh_cn: CheckMenuItem<tauri::Wry>,
+    language_zh_tw: CheckMenuItem<tauri::Wry>,
+    language_en: CheckMenuItem<tauri::Wry>,
+    appearance: Submenu<tauri::Wry>,
+    theme_system: CheckMenuItem<tauri::Wry>,
+    theme_dark: CheckMenuItem<tauri::Wry>,
+    theme_light: CheckMenuItem<tauri::Wry>,
+    skin_blur: CheckMenuItem<tauri::Wry>,
+    skin_computer: CheckMenuItem<tauri::Wry>,
+    quit: MenuItem<tauri::Wry>,
+    #[cfg(debug_assertions)]
+    test_short_window: CheckMenuItem<tauri::Wry>,
+}
+
+struct TrayLabels {
+    show: &'static str,
+    hide: &'static str,
+    refresh: &'static str,
+    settings: &'static str,
+    always_on_top: &'static str,
+    locked: &'static str,
+    pinned: &'static str,
+    autostart: &'static str,
+    language: &'static str,
+    zh_cn: &'static str,
+    zh_tw: &'static str,
+    english: &'static str,
+    appearance: &'static str,
+    system: &'static str,
+    dark: &'static str,
+    light: &'static str,
+    blur: &'static str,
+    computer: &'static str,
+    quit: &'static str,
+    #[cfg(debug_assertions)]
+    debug_short_window: &'static str,
+}
+
+fn tray_labels(language: &str) -> TrayLabels {
+    match language {
+        "zh-TW" => TrayLabels {
+            show: "顯示", hide: "隱藏", refresh: "立即更新", settings: "功能設定",
+            always_on_top: "置頂", locked: "鎖定", pinned: "固定", autostart: "開機自動啟動",
+            language: "切換語言 / Swtich Language", zh_cn: "簡體中文", zh_tw: "繁體中文", english: "English",
+            appearance: "外觀", system: "跟隨系統", dark: "深色", light: "淺色",
+            blur: "模糊", computer: "電腦", quit: "退出",
+            #[cfg(debug_assertions)]
+            debug_short_window: "測試：模擬 5 小時額度",
+        },
+        "en" => TrayLabels {
+            show: "Show", hide: "Hide", refresh: "Refresh Now", settings: "Feature Settings",
+            always_on_top: "Always on Top", locked: "Lock", pinned: "Pin", autostart: "Launch at Startup",
+            language: "Switch Language", zh_cn: "Simplified Chinese", zh_tw: "Traditional Chinese", english: "English",
+            appearance: "Appearance", system: "Follow System", dark: "Dark", light: "Light",
+            blur: "Blur", computer: "Computer", quit: "Quit",
+            #[cfg(debug_assertions)]
+            debug_short_window: "Test: Simulate 5-hour Quota",
+        },
+        _ => TrayLabels {
+            show: "显示", hide: "隐藏", refresh: "立即刷新", settings: "功能设置",
+            always_on_top: "置顶", locked: "锁定", pinned: "固定", autostart: "开机自启",
+            language: "切换语言 / Swtich Language", zh_cn: "简体中文", zh_tw: "繁体中文", english: "English",
+            appearance: "外观", system: "跟随系统", dark: "深色", light: "浅色",
+            blur: "模糊", computer: "电脑", quit: "退出",
+            #[cfg(debug_assertions)]
+            debug_short_window: "测试：模拟 5 小时额度",
+        },
+    }
+}
+
+fn update_tray_menu(menu: &TrayMenuState, language: &str, visible: bool) {
+    let labels = tray_labels(language);
+    let _ = menu.show.set_text(if visible { labels.hide } else { labels.show });
+    let _ = menu.refresh.set_text(labels.refresh);
+    let _ = menu.settings.set_text(labels.settings);
+    let _ = menu.always_on_top.set_text(labels.always_on_top);
+    let _ = menu.locked.set_text(labels.locked);
+    let _ = menu.pinned.set_text(labels.pinned);
+    let _ = menu.autostart.set_text(labels.autostart);
+    let _ = menu.language.set_text(labels.language);
+    let _ = menu.language_zh_cn.set_text(labels.zh_cn);
+    let _ = menu.language_zh_tw.set_text(labels.zh_tw);
+    let _ = menu.language_en.set_text(labels.english);
+    let _ = menu.language_zh_cn.set_checked(language == "zh-CN");
+    let _ = menu.language_zh_tw.set_checked(language == "zh-TW");
+    let _ = menu.language_en.set_checked(language == "en");
+    let _ = menu.appearance.set_text(labels.appearance);
+    let _ = menu.theme_system.set_text(labels.system);
+    let _ = menu.theme_dark.set_text(labels.dark);
+    let _ = menu.theme_light.set_text(labels.light);
+    let _ = menu.skin_blur.set_text(labels.blur);
+    let _ = menu.skin_computer.set_text(labels.computer);
+    let _ = menu.quit.set_text(labels.quit);
+    #[cfg(debug_assertions)]
+    let _ = menu.test_short_window.set_text(labels.debug_short_window);
+}
+
+fn sync_show_menu_state(app: &AppHandle, visible: bool) {
+    if let Some(state) = app.try_state::<AppState>() {
+        let language = preferences_lock(state.inner()).language.clone();
+        if let Ok(tray_menu) = state.tray_menu.lock() {
+            if let Some(menu) = tray_menu.as_ref() {
+                let _ = menu.show.set_checked(visible);
+                update_tray_menu(menu, &language, visible);
+            }
+        }
     }
 }
 
@@ -869,11 +978,23 @@ fn get_preferences(state: State<'_, AppState>) -> WidgetPreferences {
 #[tauri::command]
 fn set_preferences(
     preferences: WidgetPreferences,
+    app: AppHandle,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
     let preferences = preferences.normalized();
     persist_preferences(&state.preferences_path, &preferences)?;
-    *preferences_lock(&state) = preferences;
+    *preferences_lock(&state) = preferences.clone();
+    if let Ok(tray_menu) = state.tray_menu.lock() {
+        if let Some(menu) = tray_menu.as_ref() {
+            let _ = menu.always_on_top.set_checked(preferences.always_on_top);
+            let _ = menu.locked.set_checked(preferences.locked);
+            let _ = menu.pinned.set_checked(preferences.pinned_provider.is_some());
+            let visible = app.get_webview_window("widget")
+                .and_then(|window| window.is_visible().ok())
+                .unwrap_or(true);
+            update_tray_menu(menu, &preferences.language, visible);
+        }
+    }
     Ok(())
 }
 
@@ -976,6 +1097,11 @@ fn set_widget_locked(
         .preferences
         .lock()
         .map_err(|_| "settings unavailable".to_string())? = next.clone();
+    if let Ok(tray_menu) = state.tray_menu.lock() {
+        if let Some(menu) = tray_menu.as_ref() {
+            let _ = menu.locked.set_checked(next.locked);
+        }
+    }
     Ok(next)
 }
 
@@ -1001,6 +1127,11 @@ fn set_widget_always_on_top(
         .preferences
         .lock()
         .map_err(|_| "settings unavailable".to_string())? = next.clone();
+    if let Ok(tray_menu) = state.tray_menu.lock() {
+        if let Some(menu) = tray_menu.as_ref() {
+            let _ = menu.always_on_top.set_checked(next.always_on_top);
+        }
+    }
     let _ = app.emit_to("widget", "preferences-changed", next.clone());
     Ok(next)
 }
@@ -1026,70 +1157,57 @@ fn sync_widget_appearance(_appearance: String, app: AppHandle, state: State<'_, 
 }
 
 fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
-    let show = MenuItem::with_id(app, "show", "Show / Hide", true, None::<&str>)?;
-    let refresh = MenuItem::with_id(app, "refresh", "Refresh now", true, None::<&str>)?;
-    let update = MenuItem::with_id(app, "update", "Check for updates", true, None::<&str>)?;
-    let pin = MenuItem::with_id(app, "pin", "Pin / Unpin Codex", true, None::<&str>)?;
-    let always_on_top = CheckMenuItem::with_id(app, "always-on-top", "Always on top", true, false, None::<&str>)?;
-    let locked = CheckMenuItem::with_id(app, "locked", "Lock interactions", true, false, None::<&str>)?;
-    let language = MenuItem::with_id(app, "language", "Switch Language / 切换语言", true, None::<&str>)?;
-    let theme_system = CheckMenuItem::with_id(app, "theme-system", "Follow system", true, false, None::<&str>)?;
-    let theme_dark = CheckMenuItem::with_id(app, "theme-dark", "Dark", true, false, None::<&str>)?;
-    let theme_light = CheckMenuItem::with_id(app, "theme-light", "Light", true, false, None::<&str>)?;
-    let skin_blur = CheckMenuItem::with_id(app, "skin-blur", "Blur", true, false, None::<&str>)?;
-    let skin_computer = CheckMenuItem::with_id(app, "skin-computer", "Computer", true, false, None::<&str>)?;
-    let skin_mac_glass = CheckMenuItem::with_id(app, "skin-mac-glass", "Mac Glass", true, false, None::<&str>)?;
-    let skin_tvos_focus = CheckMenuItem::with_id(app, "skin-tvos-focus", "tvOS Focus", true, false, None::<&str>)?;
-    let skin_liquid_glass = CheckMenuItem::with_id(app, "skin-liquid-glass", "Liquid Glass", true, false, None::<&str>)?;
-    let appearance = Submenu::with_items(app, "Appearance / 外观", true, &[&theme_system, &theme_dark, &theme_light, &skin_blur, &skin_computer, &skin_mac_glass, &skin_tvos_focus, &skin_liquid_glass])?;
+    let initially_visible = app.get_webview_window("widget")
+        .and_then(|window| window.is_visible().ok())
+        .unwrap_or(true);
+    let labels = tray_labels("zh-CN");
+    let show = CheckMenuItem::with_id(app, "show", labels.hide, true, initially_visible, None::<&str>)?;
+    let refresh = MenuItem::with_id(app, "refresh", labels.refresh, true, None::<&str>)?;
+    let pin = CheckMenuItem::with_id(app, "pin", labels.pinned, true, false, None::<&str>)?;
+    let always_on_top = CheckMenuItem::with_id(app, "always-on-top", labels.always_on_top, true, false, None::<&str>)?;
+    let locked = CheckMenuItem::with_id(app, "locked", labels.locked, true, false, None::<&str>)?;
+    let language_zh_cn = CheckMenuItem::with_id(app, "language-zh-CN", labels.zh_cn, true, true, None::<&str>)?;
+    let language_zh_tw = CheckMenuItem::with_id(app, "language-zh-TW", labels.zh_tw, true, false, None::<&str>)?;
+    let language_en = CheckMenuItem::with_id(app, "language-en", labels.english, true, false, None::<&str>)?;
+    let language = Submenu::with_items(app, labels.language, true, &[&language_zh_cn, &language_zh_tw, &language_en])?;
+    let theme_system = CheckMenuItem::with_id(app, "theme-system", labels.system, true, false, None::<&str>)?;
+    let theme_dark = CheckMenuItem::with_id(app, "theme-dark", labels.dark, true, false, None::<&str>)?;
+    let theme_light = CheckMenuItem::with_id(app, "theme-light", labels.light, true, false, None::<&str>)?;
+    let skin_blur = CheckMenuItem::with_id(app, "skin-blur", labels.blur, true, false, None::<&str>)?;
+    let skin_computer = CheckMenuItem::with_id(app, "skin-computer", labels.computer, true, false, None::<&str>)?;
+    let appearance = Submenu::with_items(app, labels.appearance, true, &[&theme_system, &theme_dark, &theme_light, &skin_blur, &skin_computer])?;
     let autostart = CheckMenuItem::with_id(
-        app, "autostart", "Start at login", true,
+        app, "autostart", labels.autostart, true,
         app.autolaunch().is_enabled().unwrap_or(false), None::<&str>,
     )?;
     #[cfg(debug_assertions)]
-    let test_short_window = CheckMenuItem::with_id(app, "debug-short-window", "Test: simulate 5-hour quota", true, false, None::<&str>)?;
-    let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
-    let settings = Submenu::with_items(app, "Settings / 设置", true, &[&always_on_top, &locked, &pin, &language, &autostart])?;
+    let test_short_window = CheckMenuItem::with_id(app, "debug-short-window", labels.debug_short_window, true, false, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", labels.quit, true, None::<&str>)?;
+    let settings = Submenu::with_items(app, labels.settings, true, &[&always_on_top, &locked, &pin, &autostart])?;
 
     let preferences = app.try_state::<AppState>()
         .and_then(|state| state.preferences.lock().ok().map(|prefs| prefs.clone()))
         .unwrap_or_default();
-    let english = preferences.language == "en";
     let _ = always_on_top.set_checked(preferences.always_on_top);
     let _ = locked.set_checked(preferences.locked);
+    let _ = pin.set_checked(preferences.pinned_provider.is_some());
+    let _ = language_zh_cn.set_checked(preferences.language == "zh-CN");
+    let _ = language_zh_tw.set_checked(preferences.language == "zh-TW");
+    let _ = language_en.set_checked(preferences.language == "en");
     let _ = theme_system.set_checked(preferences.selected_skin == "default" && preferences.appearance == "system");
     let _ = theme_dark.set_checked(preferences.selected_skin == "default" && preferences.appearance == "dark");
     let _ = theme_light.set_checked(preferences.selected_skin == "default" && preferences.appearance == "light");
     let _ = skin_blur.set_checked(preferences.selected_skin == "blur");
     let _ = skin_computer.set_checked(preferences.selected_skin == "computer");
-    let _ = skin_mac_glass.set_checked(preferences.selected_skin == "mac-glass");
-    let _ = skin_tvos_focus.set_checked(preferences.selected_skin == "tvos-focus");
-    let _ = skin_liquid_glass.set_checked(preferences.selected_skin == "liquid-glass");
-    if !english {
-        let _ = show.set_text("显示 / 隐藏");
-        let _ = refresh.set_text("立即刷新");
-        let _ = update.set_text(update_menu_label(&preferences.language, false));
-        let _ = always_on_top.set_text("置顶");
-        let _ = locked.set_text("锁定");
-        let _ = pin.set_text("固定 / 取消固定 Codex");
-        let _ = language.set_text("Switch to English");
-        let _ = appearance.set_text("外观");
-        let _ = skin_mac_glass.set_text("Mac 桌面玻璃");
-        let _ = skin_tvos_focus.set_text("tvOS 焦点玻璃");
-        let _ = skin_liquid_glass.set_text("磨砂液态玻璃");
-        let _ = autostart.set_text("开机启动");
-        let _ = quit.set_text("退出");
-    }
 
     #[cfg(debug_assertions)]
-    let menu = Menu::with_items(app, &[&show, &refresh, &update, &settings, &appearance, &test_short_window, &quit])?;
+    let menu = Menu::with_items(app, &[&show, &refresh, &settings, &language, &appearance, &test_short_window, &quit])?;
     #[cfg(not(debug_assertions))]
-    let menu = Menu::with_items(app, &[&show, &refresh, &update, &settings, &appearance, &quit])?;
+    let menu = Menu::with_items(app, &[&show, &refresh, &settings, &language, &appearance, &quit])?;
     let mut builder = TrayIconBuilder::with_id("main").menu(&menu).tooltip("Quota Float");
     if let Some(icon) = app.default_window_icon() {
         builder = builder.icon(icon.clone());
     }
-    let update_indicator = update.clone();
     let autostart_menu = autostart.clone();
     let always_on_top_state = always_on_top.clone();
     let locked_state = locked.clone();
@@ -1098,18 +1216,45 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
     let theme_light_state = theme_light.clone();
     let skin_blur_state = skin_blur.clone();
     let skin_computer_state = skin_computer.clone();
-    let skin_mac_glass_state = skin_mac_glass.clone();
-    let skin_tvos_focus_state = skin_tvos_focus.clone();
-    let skin_liquid_glass_state = skin_liquid_glass.clone();
+    let pin_state = pin.clone();
     #[cfg(debug_assertions)]
     let test_short_window_menu = test_short_window.clone();
+    let tray_menu_state = TrayMenuState {
+        show: show.clone(),
+        refresh: refresh.clone(),
+        always_on_top: always_on_top.clone(),
+        locked: locked.clone(),
+        pinned: pin.clone(),
+        autostart: autostart.clone(),
+        settings: settings.clone(),
+        language: language.clone(),
+        language_zh_cn: language_zh_cn.clone(),
+        language_zh_tw: language_zh_tw.clone(),
+        language_en: language_en.clone(),
+        appearance: appearance.clone(),
+        theme_system: theme_system.clone(),
+        theme_dark: theme_dark.clone(),
+        theme_light: theme_light.clone(),
+        skin_blur: skin_blur.clone(),
+        skin_computer: skin_computer.clone(),
+        quit: quit.clone(),
+        #[cfg(debug_assertions)]
+        test_short_window: test_short_window.clone(),
+    };
+    update_tray_menu(&tray_menu_state, &preferences.language, initially_visible);
+    let tray_menu_for_events = tray_menu_state.clone();
     builder.on_menu_event(move |app, event| match event.id.as_ref() {
         "show" => if let Some(window) = app.get_webview_window("widget") {
-            if window.is_visible().unwrap_or(false) { let _ = window.hide(); }
-            else { let _ = window.show(); let _ = window.set_focus(); }
+            if window.is_visible().unwrap_or(false) {
+                let _ = window.hide();
+                sync_show_menu_state(app, false);
+            } else {
+                let _ = window.show();
+                let _ = window.set_focus();
+                sync_show_menu_state(app, true);
+            }
         },
         "refresh" => { let _ = app.emit_to("widget", "refresh-requested", ()); }
-        "update" => { let _ = app.emit_to("widget", "update-check-requested", ()); }
         "debug-short-window" => {
             #[cfg(debug_assertions)]
             if let Some(state) = app.try_state::<AppState>() {
@@ -1138,16 +1283,34 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
         },
         "pin" => if let Some(state) = app.try_state::<AppState>() {
             if let Ok(mut prefs) = state.preferences.lock() {
+                let previous = prefs.clone();
                 prefs.pinned_provider = if prefs.pinned_provider.is_some() { None } else { Some("codex".into()) };
-                let _ = persist_preferences(&state.preferences_path, &prefs);
-                let _ = app.emit_to("widget", "preferences-changed", prefs.clone());
+                if persist_preferences(&state.preferences_path, &prefs).is_ok() {
+                    let _ = pin_state.set_checked(prefs.pinned_provider.is_some());
+                    let _ = app.emit_to("widget", "preferences-changed", prefs.clone());
+                } else {
+                    *prefs = previous;
+                    let _ = pin_state.set_checked(prefs.pinned_provider.is_some());
+                }
             }
         },
-        "language" => if let Some(state) = app.try_state::<AppState>() {
+        "language-zh-CN" | "language-zh-TW" | "language-en" => if let Some(state) = app.try_state::<AppState>() {
             if let Ok(mut prefs) = state.preferences.lock() {
-                prefs.language = if prefs.language == "en" { "zh-CN".into() } else { "en".into() };
-                let _ = persist_preferences(&state.preferences_path, &prefs);
-                let _ = app.emit_to("widget", "preferences-changed", prefs.clone());
+                let previous = prefs.clone();
+                prefs.language = event.id.as_ref().strip_prefix("language-").unwrap_or("zh-CN").into();
+                if persist_preferences(&state.preferences_path, &prefs).is_ok() {
+                    let visible = app.get_webview_window("widget")
+                        .and_then(|window| window.is_visible().ok())
+                        .unwrap_or(true);
+                    update_tray_menu(&tray_menu_for_events, &prefs.language, visible);
+                    let _ = app.emit_to("widget", "preferences-changed", prefs.clone());
+                } else {
+                    *prefs = previous;
+                    let visible = app.get_webview_window("widget")
+                        .and_then(|window| window.is_visible().ok())
+                        .unwrap_or(true);
+                    update_tray_menu(&tray_menu_for_events, &prefs.language, visible);
+                }
             }
         },
         "always-on-top" => if let Some(state) = app.try_state::<AppState>() {
@@ -1178,30 +1341,20 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
                     let _ = theme_light_state.set_checked(prefs.appearance == "light");
                     let _ = skin_blur_state.set_checked(false);
                     let _ = skin_computer_state.set_checked(false);
-                    let _ = skin_mac_glass_state.set_checked(false);
-                    let _ = skin_tvos_focus_state.set_checked(false);
-                    let _ = skin_liquid_glass_state.set_checked(false);
                     let _ = app.emit_to("widget", "preferences-changed", prefs.clone());
                 }
             }
         },
-        "skin-blur" | "skin-computer" | "skin-mac-glass" | "skin-tvos-focus" | "skin-liquid-glass" => if let Some(state) = app.try_state::<AppState>() {
+        "skin-blur" | "skin-computer" => if let Some(state) = app.try_state::<AppState>() {
             if let Ok(mut prefs) = state.preferences.lock() {
                 prefs.selected_skin = event.id.as_ref().strip_prefix("skin-").unwrap_or("blur").into();
-                prefs.appearance = if prefs.selected_skin == "mac-glass" || prefs.selected_skin == "tvos-focus" {
-                    "dark".into()
-                } else {
-                    "light".into()
-                };
+                prefs.appearance = "light".into();
                 if persist_preferences(&state.preferences_path, &prefs).is_ok() {
                     let _ = theme_system_state.set_checked(false);
                     let _ = theme_dark_state.set_checked(false);
                     let _ = theme_light_state.set_checked(false);
                     let _ = skin_blur_state.set_checked(prefs.selected_skin == "blur");
                     let _ = skin_computer_state.set_checked(prefs.selected_skin == "computer");
-                    let _ = skin_mac_glass_state.set_checked(prefs.selected_skin == "mac-glass");
-                    let _ = skin_tvos_focus_state.set_checked(prefs.selected_skin == "tvos-focus");
-                    let _ = skin_liquid_glass_state.set_checked(prefs.selected_skin == "liquid-glass");
                     let _ = app.emit_to("widget", "preferences-changed", prefs.clone());
                 }
             }
@@ -1215,17 +1368,11 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
         "quit" => app.exit(0),
         _ => {}
     }).build(app)?;
-
-    let update_app = app.handle().clone();
-    tauri::async_runtime::spawn(async move {
-        let Ok(updater) = update_app.updater() else { return; };
-        if updater.check().await.ok().flatten().is_none() { return; }
-        let language = update_app.try_state::<AppState>().and_then(|state| {
-            if let Ok(mut available) = state.update_available.lock() { *available = true; }
-            state.preferences.lock().ok().map(|prefs| prefs.language.clone())
-        }).unwrap_or_else(|| "zh-CN".into());
-        let _ = update_indicator.set_text(update_menu_label(&language, true));
-    });
+    if let Some(state) = app.try_state::<AppState>() {
+        if let Ok(mut tray_menu) = state.tray_menu.lock() {
+            *tray_menu = Some(tray_menu_state);
+        }
+    }
     Ok(())
 }
 
@@ -1238,6 +1385,7 @@ pub fn run() {
             if let Some(window) = app.get_webview_window("widget") {
                 let _ = window.show();
                 let _ = window.set_focus();
+                sync_show_menu_state(app, true);
             }
         }))
         .plugin(tauri_plugin_autostart::init(
@@ -1266,7 +1414,7 @@ pub fn run() {
                 simulate_short_window_for_testing: Mutex::new(false),
                 geometry: Mutex::new(None),
                 drag_mode: Mutex::new(None),
-                update_available: Mutex::new(false),
+                tray_menu: Mutex::new(None),
             });
             if setup_tray(app).is_err() {
                 eprintln!("tray setup failed; enabling taskbar fallback");
@@ -1329,6 +1477,7 @@ pub fn run() {
                 if let Some(window) = app.get_webview_window("widget") {
                     let _ = window.show();
                     let _ = window.set_focus();
+                    sync_show_menu_state(app, true);
                 }
             }
         })
@@ -1336,6 +1485,7 @@ pub fn run() {
             if let WindowEvent::CloseRequested { api, .. } = event {
                 api.prevent_close();
                 let _ = window.hide();
+                sync_show_menu_state(window.app_handle(), false);
             }
         })
         .build(tauri::generate_context!())

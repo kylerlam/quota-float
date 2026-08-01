@@ -61,7 +61,7 @@ pub struct WidgetPreferences {
 }
 
 fn default_always_on_top() -> bool {
-    false
+    true
 }
 fn default_language() -> String {
     "zh-CN".into()
@@ -77,7 +77,7 @@ impl Default for WidgetPreferences {
     fn default() -> Self {
         Self {
             locked: false,
-            always_on_top: false,
+            always_on_top: true,
             window_behavior_version: 1,
             stay_expanded: false,
             pinned_provider: None,
@@ -99,7 +99,7 @@ impl WidgetPreferences {
         if self.pinned_provider.as_deref() != Some("codex") {
             self.pinned_provider = None;
         }
-        if self.language != "en" && self.language != "zh-CN" {
+        if self.language != "en" && self.language != "zh-CN" && self.language != "zh-TW" {
             self.language = default_language();
         }
         if self.appearance != "system" && self.appearance != "light" && self.appearance != "dark" {
@@ -115,5 +115,27 @@ impl WidgetPreferences {
             self.selected_skin = default_skin();
         }
         self
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::WidgetPreferences;
+
+    #[test]
+    fn new_users_get_the_safe_minimal_defaults() {
+        let preferences = WidgetPreferences::default();
+        assert!(preferences.always_on_top);
+        assert!(!preferences.locked);
+        assert!(!preferences.stay_expanded);
+        assert!(preferences.pinned_provider.is_none());
+        assert_eq!(preferences.language, "zh-CN");
+    }
+
+    #[test]
+    fn traditional_chinese_is_a_supported_language() {
+        let mut preferences = WidgetPreferences::default();
+        preferences.language = "zh-TW".into();
+        assert_eq!(preferences.normalized().language, "zh-TW");
     }
 }
