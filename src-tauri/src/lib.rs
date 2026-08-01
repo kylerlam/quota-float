@@ -131,7 +131,6 @@ struct TrayMenuState {
 
 struct TrayLabels {
     show: &'static str,
-    hide: &'static str,
     refresh: &'static str,
     settings: &'static str,
     always_on_top: &'static str,
@@ -156,7 +155,7 @@ struct TrayLabels {
 fn tray_labels(language: &str) -> TrayLabels {
     match language {
         "zh-TW" => TrayLabels {
-            show: "顯示", hide: "隱藏", refresh: "立即更新", settings: "功能設定",
+            show: "顯示", refresh: "立即更新", settings: "功能設定",
             always_on_top: "置頂", locked: "鎖定", pinned: "固定", autostart: "開機自動啟動",
             language: "切換語言 / Swtich Language", zh_cn: "簡體中文", zh_tw: "繁體中文", english: "English",
             appearance: "外觀", system: "跟隨系統", dark: "深色", light: "淺色",
@@ -165,7 +164,7 @@ fn tray_labels(language: &str) -> TrayLabels {
             debug_short_window: "測試：模擬 5 小時額度",
         },
         "en" => TrayLabels {
-            show: "Show", hide: "Hide", refresh: "Refresh Now", settings: "Feature Settings",
+            show: "Show", refresh: "Refresh Now", settings: "Feature Settings",
             always_on_top: "Always on Top", locked: "Lock", pinned: "Pin", autostart: "Launch at Startup",
             language: "Switch Language", zh_cn: "Simplified Chinese", zh_tw: "Traditional Chinese", english: "English",
             appearance: "Appearance", system: "Follow System", dark: "Dark", light: "Light",
@@ -174,7 +173,7 @@ fn tray_labels(language: &str) -> TrayLabels {
             debug_short_window: "Test: Simulate 5-hour Quota",
         },
         _ => TrayLabels {
-            show: "显示", hide: "隐藏", refresh: "立即刷新", settings: "功能设置",
+            show: "显示", refresh: "立即刷新", settings: "功能设置",
             always_on_top: "置顶", locked: "锁定", pinned: "固定", autostart: "开机自启",
             language: "切换语言 / Swtich Language", zh_cn: "简体中文", zh_tw: "繁体中文", english: "English",
             appearance: "外观", system: "跟随系统", dark: "深色", light: "浅色",
@@ -185,9 +184,9 @@ fn tray_labels(language: &str) -> TrayLabels {
     }
 }
 
-fn update_tray_menu(menu: &TrayMenuState, language: &str, visible: bool) {
+fn update_tray_menu(menu: &TrayMenuState, language: &str, _visible: bool) {
     let labels = tray_labels(language);
-    let _ = menu.show.set_text(if visible { labels.hide } else { labels.show });
+    let _ = menu.show.set_text(labels.show);
     let _ = menu.refresh.set_text(labels.refresh);
     let _ = menu.settings.set_text(labels.settings);
     let _ = menu.always_on_top.set_text(labels.always_on_top);
@@ -704,6 +703,13 @@ fn expand_widget(
 mod geometry_tests {
     use super::*;
 
+    #[test]
+    fn visibility_action_is_always_labeled_show() {
+        assert_eq!(tray_labels("zh-CN").show, "显示");
+        assert_eq!(tray_labels("zh-TW").show, "顯示");
+        assert_eq!(tray_labels("en").show, "Show");
+    }
+
     fn rect(x: i32, y: i32, size: u32) -> WidgetRect {
         WidgetRect {
             position: PhysicalPosition::new(x, y),
@@ -1161,7 +1167,7 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
         .and_then(|window| window.is_visible().ok())
         .unwrap_or(true);
     let labels = tray_labels("zh-CN");
-    let show = CheckMenuItem::with_id(app, "show", labels.hide, true, initially_visible, None::<&str>)?;
+    let show = CheckMenuItem::with_id(app, "show", labels.show, true, initially_visible, None::<&str>)?;
     let refresh = MenuItem::with_id(app, "refresh", labels.refresh, true, None::<&str>)?;
     let pin = CheckMenuItem::with_id(app, "pin", labels.pinned, true, false, None::<&str>)?;
     let always_on_top = CheckMenuItem::with_id(app, "always-on-top", labels.always_on_top, true, false, None::<&str>)?;
