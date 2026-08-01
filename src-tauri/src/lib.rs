@@ -111,7 +111,6 @@ struct TrayMenuState {
     refresh: MenuItem<tauri::Wry>,
     always_on_top: CheckMenuItem<tauri::Wry>,
     locked: CheckMenuItem<tauri::Wry>,
-    pinned: CheckMenuItem<tauri::Wry>,
     autostart: CheckMenuItem<tauri::Wry>,
     settings: Submenu<tauri::Wry>,
     language: Submenu<tauri::Wry>,
@@ -135,7 +134,6 @@ struct TrayLabels {
     settings: &'static str,
     always_on_top: &'static str,
     locked: &'static str,
-    pinned: &'static str,
     autostart: &'static str,
     language: &'static str,
     zh_cn: &'static str,
@@ -156,7 +154,7 @@ fn tray_labels(language: &str) -> TrayLabels {
     match language {
         "zh-TW" => TrayLabels {
             show: "顯示", refresh: "立即更新", settings: "功能設定",
-            always_on_top: "置頂", locked: "鎖定", pinned: "固定", autostart: "開機自動啟動",
+            always_on_top: "置頂", locked: "鎖定", autostart: "開機自動啟動",
             language: "切換語言 / Swtich Language", zh_cn: "簡體中文", zh_tw: "繁體中文", english: "English",
             appearance: "外觀", system: "跟隨系統", dark: "深色", light: "淺色",
             blur: "模糊", computer: "電腦", quit: "退出",
@@ -165,7 +163,7 @@ fn tray_labels(language: &str) -> TrayLabels {
         },
         "en" => TrayLabels {
             show: "Show", refresh: "Refresh Now", settings: "Feature Settings",
-            always_on_top: "Always on Top", locked: "Lock", pinned: "Pin", autostart: "Launch at Startup",
+            always_on_top: "Always on Top", locked: "Lock", autostart: "Launch at Startup",
             language: "Switch Language", zh_cn: "Simplified Chinese", zh_tw: "Traditional Chinese", english: "English",
             appearance: "Appearance", system: "Follow System", dark: "Dark", light: "Light",
             blur: "Blur", computer: "Computer", quit: "Quit",
@@ -174,7 +172,7 @@ fn tray_labels(language: &str) -> TrayLabels {
         },
         _ => TrayLabels {
             show: "显示", refresh: "立即刷新", settings: "功能设置",
-            always_on_top: "置顶", locked: "锁定", pinned: "固定", autostart: "开机自启",
+            always_on_top: "置顶", locked: "锁定", autostart: "开机自启",
             language: "切换语言 / Swtich Language", zh_cn: "简体中文", zh_tw: "繁体中文", english: "English",
             appearance: "外观", system: "跟随系统", dark: "深色", light: "浅色",
             blur: "模糊", computer: "电脑", quit: "退出",
@@ -191,7 +189,6 @@ fn update_tray_menu(menu: &TrayMenuState, language: &str, _visible: bool) {
     let _ = menu.settings.set_text(labels.settings);
     let _ = menu.always_on_top.set_text(labels.always_on_top);
     let _ = menu.locked.set_text(labels.locked);
-    let _ = menu.pinned.set_text(labels.pinned);
     let _ = menu.autostart.set_text(labels.autostart);
     let _ = menu.language.set_text(labels.language);
     let _ = menu.language_zh_cn.set_text(labels.zh_cn);
@@ -994,7 +991,6 @@ fn set_preferences(
         if let Some(menu) = tray_menu.as_ref() {
             let _ = menu.always_on_top.set_checked(preferences.always_on_top);
             let _ = menu.locked.set_checked(preferences.locked);
-            let _ = menu.pinned.set_checked(preferences.pinned_provider.is_some());
             let visible = app.get_webview_window("widget")
                 .and_then(|window| window.is_visible().ok())
                 .unwrap_or(true);
@@ -1169,7 +1165,6 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
     let labels = tray_labels("zh-CN");
     let show = CheckMenuItem::with_id(app, "show", labels.show, true, initially_visible, None::<&str>)?;
     let refresh = MenuItem::with_id(app, "refresh", labels.refresh, true, None::<&str>)?;
-    let pin = CheckMenuItem::with_id(app, "pin", labels.pinned, true, false, None::<&str>)?;
     let always_on_top = CheckMenuItem::with_id(app, "always-on-top", labels.always_on_top, true, false, None::<&str>)?;
     let locked = CheckMenuItem::with_id(app, "locked", labels.locked, true, false, None::<&str>)?;
     let language_zh_cn = CheckMenuItem::with_id(app, "language-zh-CN", labels.zh_cn, true, true, None::<&str>)?;
@@ -1189,14 +1184,13 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
     #[cfg(debug_assertions)]
     let test_short_window = CheckMenuItem::with_id(app, "debug-short-window", labels.debug_short_window, true, false, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", labels.quit, true, None::<&str>)?;
-    let settings = Submenu::with_items(app, labels.settings, true, &[&always_on_top, &locked, &pin, &autostart])?;
+    let settings = Submenu::with_items(app, labels.settings, true, &[&always_on_top, &locked, &autostart])?;
 
     let preferences = app.try_state::<AppState>()
         .and_then(|state| state.preferences.lock().ok().map(|prefs| prefs.clone()))
         .unwrap_or_default();
     let _ = always_on_top.set_checked(preferences.always_on_top);
     let _ = locked.set_checked(preferences.locked);
-    let _ = pin.set_checked(preferences.pinned_provider.is_some());
     let _ = language_zh_cn.set_checked(preferences.language == "zh-CN");
     let _ = language_zh_tw.set_checked(preferences.language == "zh-TW");
     let _ = language_en.set_checked(preferences.language == "en");
@@ -1222,7 +1216,6 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
     let theme_light_state = theme_light.clone();
     let skin_blur_state = skin_blur.clone();
     let skin_computer_state = skin_computer.clone();
-    let pin_state = pin.clone();
     #[cfg(debug_assertions)]
     let test_short_window_menu = test_short_window.clone();
     let tray_menu_state = TrayMenuState {
@@ -1230,7 +1223,6 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
         refresh: refresh.clone(),
         always_on_top: always_on_top.clone(),
         locked: locked.clone(),
-        pinned: pin.clone(),
         autostart: autostart.clone(),
         settings: settings.clone(),
         language: language.clone(),
@@ -1284,19 +1276,6 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
                     *prefs = previous;
                     let _ = persist_preferences(&state.preferences_path, &prefs);
                     let _ = locked_state.set_checked(prefs.locked);
-                }
-            }
-        },
-        "pin" => if let Some(state) = app.try_state::<AppState>() {
-            if let Ok(mut prefs) = state.preferences.lock() {
-                let previous = prefs.clone();
-                prefs.pinned_provider = if prefs.pinned_provider.is_some() { None } else { Some("codex".into()) };
-                if persist_preferences(&state.preferences_path, &prefs).is_ok() {
-                    let _ = pin_state.set_checked(prefs.pinned_provider.is_some());
-                    let _ = app.emit_to("widget", "preferences-changed", prefs.clone());
-                } else {
-                    *prefs = previous;
-                    let _ = pin_state.set_checked(prefs.pinned_provider.is_some());
                 }
             }
         },
